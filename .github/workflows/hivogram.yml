@@ -9,7 +9,7 @@ on:
     inputs:
       ref:
         description: Branch of alltginone to build
-        default: claude/project-thread-3mki98
+        default: main
       targets:
         description: What to build (windows, android, pages)
         default: windows,android,pages

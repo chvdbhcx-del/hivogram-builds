@@ -26,7 +26,7 @@
 
 ## Как это собирается
 
-Репозиторий публичный только ради бесплатных минут GitHub Actions. Исходники лежат в приватных репозиториях и забираются по секрету `SOURCE_TOKEN`, здесь только workflow и готовые файлы.
+Репозиторий публичный только ради бесплатных минут GitHub Actions. Исходники лежат в приватном репозитории и забираются по секрету `SOURCE_TOKEN`, здесь только workflow и готовые файлы.
 
 | Workflow | Что делает |
 |---|---|
@@ -40,7 +40,7 @@
 
 | Секрет | Зачем |
 |---|---|
-| `SOURCE_TOKEN` | fine-grained токен GitHub: доступ к обоим приватным репозиториям с исходниками, Contents: Read-only |
+| `SOURCE_TOKEN` | fine-grained токен GitHub: доступ к приватному `alltginone` (там и Hivogram, и Hivogram Lite в `lite/`), Contents: Read-only |
 | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` | ключи Hivogram, вшиваются во все сборки |
 | `CLOUDFLARE_API_TOKEN` | заливка на Cloudflare Pages (токен с шаблона «Edit Cloudflare Workers») |
 | `VAPID_KEY` | необязательно: Web Push-ключ Telegram, иначе берётся с web.telegram.org/a |

@@ -1,13 +1,13 @@
-# Hivogram Lite (Rust + Slint) from the private repo chvdbhcx-del/hivogram-oxigram: Windows x64 installer
-# with Hivogram's API keys baked in (core/build.rs reads TELEGRAM_API_ID / TELEGRAM_API_HASH), into a release here.
+# Hivogram Lite (Rust + Slint) from lite/ of the private repo chvdbhcx-del/alltginone: Windows x64 installer
+# with Hivogram's API keys baked in (lite/core/build.rs reads TELEGRAM_API_ID / TELEGRAM_API_HASH), into a release here.
 name: Hivogram Lite
 
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch of the Lite source repo to build
-        default: claude/project-thread-nj339u
+        description: Branch of alltginone to build
+        default: main
 
 permissions:
   contents: read
@@ -30,12 +30,12 @@ jobs:
       TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
     defaults:
       run:
-        working-directory: src
+        working-directory: src/lite
         shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: chvdbhcx-del/hivogram-oxigram
+          repository: chvdbhcx-del/alltginone
           ref: ${{ inputs.ref }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
@@ -49,11 +49,11 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src
+          workspaces: src/lite
           key: lite-windows
       - run: cargo install cargo-packager --locked
       - run: cargo build --release --locked -p hivogram-lite --target x86_64-pc-windows-msvc
-      - working-directory: src/native
+      - working-directory: src/lite/native
         run: cargo packager --release --target x86_64-pc-windows-msvc --formats nsis
       - name: Release
         env:
@@ -61,9 +61,9 @@ jobs:
           REF: ${{ inputs.ref }}
         run: |
           VERSION=$(grep -m1 '^version' native/Cargo.toml | cut -d'"' -f2)
-          mkdir -p ../out
-          for f in target/packager/*.exe; do cp "$f" "../out/hivogram-lite-windows-x64-$(basename "$f")"; done
-          cd ../out && sha256sum * > SHA256SUMS-lite.txt && ls -l
+          mkdir -p ../../out
+          for f in target/packager/*.exe; do cp "$f" "../../out/hivogram-lite-windows-x64-$(basename "$f")"; done
+          cd ../../out && sha256sum * > SHA256SUMS-lite.txt && ls -l
           gh release create "lite-v${VERSION}-build.${{ github.run_number }}" * \
             --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram Lite ${VERSION}, сборка ${{ github.run_number }}" \
