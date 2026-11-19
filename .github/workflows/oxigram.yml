@@ -1,0 +1,70 @@
+# Hivogram on oxigram (Rust + Slint) from the private repo chvdbhcx-del/hivogram-oxigram: Windows x64 installer
+# with Hivogram's API keys baked in (core/build.rs reads TELEGRAM_API_ID / TELEGRAM_API_HASH), into a release here.
+name: Oxigram
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch of hivogram-oxigram to build
+        default: claude/project-thread-nj339u
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oxigram
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+      TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+    defaults:
+      run:
+        working-directory: src
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: chvdbhcx-del/hivogram-oxigram
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          persist-credentials: false
+      - name: Keys present?
+        run: |
+          [ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }
+          [ -f core/build.rs ] || { echo "::error::${{ inputs.ref }} has no core/build.rs: keys would not be built in"; exit 1; }
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src
+          key: oxigram-windows
+      - run: cargo install cargo-packager --locked
+      - run: cargo build --release --locked -p oxigram-native --target x86_64-pc-windows-msvc
+      - working-directory: src/native
+        run: cargo packager --release --target x86_64-pc-windows-msvc --formats nsis
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ inputs.ref }}
+        run: |
+          VERSION=$(grep -m1 '^version' native/Cargo.toml | cut -d'"' -f2)
+          mkdir -p ../out
+          for f in target/packager/*.exe; do cp "$f" "../out/hivogram-oxigram-windows-x64-$(basename "$f")"; done
+          cd ../out && sha256sum * > SHA256SUMS-oxigram.txt && ls -l
+          gh release create "oxigram-v${VERSION}-build.${{ github.run_number }}" * \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+            --title "Hivogram (oxigram) ${VERSION}, сборка ${{ github.run_number }}" \
+            --notes "Windows 10/11 x64, ключи Telegram вшиты. Ветка \`${REF}\`. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае»."
