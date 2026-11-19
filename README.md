@@ -8,7 +8,7 @@
 
 | Android | iPhone | Hivogram Lite |
 |---|---|---|
-| ![](screens/android-dark.png) | ![](screens/iphone-inbox.png) | ![](screens/lite-dark.png) |
+| ![](screens/android-light.png) | ![](screens/iphone-inbox.png) | ![](screens/lite-dark.png) |
 
 ## Файлы
 
