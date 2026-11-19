@@ -1,0 +1,37 @@
+# Puts the files of an earlier Hivogram run (its workflow artifacts, kept 3 days) into a release,
+# e.g. when that run built fine but its release step failed.
+name: Publish a run
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: ID of the Hivogram run (from its URL)
+        required: true
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Remove probe releases
+        run: |
+          for t in $(gh release list --limit 100 --json tagName --jq '.[].tagName | select(startswith("probe-"))'); do gh release delete "$t" --yes --cleanup-tag || true; done
+          for r in $(gh api "repos/$GH_REPO/git/matching-refs/tags/probe-" --jq '.[].ref'); do gh api -X DELETE "repos/$GH_REPO/git/$r" || true; done
+          for id in $(gh api "repos/$GH_REPO/releases" --jq '.[] | select(.draft and .name == "") | .id'); do gh api -X DELETE "repos/$GH_REPO/releases/$id" || true; done
+      - name: Download and release
+        run: |
+          gh run download "${{ inputs.run_id }}" --dir out
+          cd out && find . -type f -exec mv {} . \; && find . -mindepth 1 -type d -delete
+          sha256sum * > SHA256SUMS.txt && ls -l
+          VERSION=$(ls Hivogram-*.* | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
+          gh release create "hivogram-v${VERSION}-run.${{ inputs.run_id }}" * --latest \
+            --title "Hivogram ${VERSION}" \
+            --notes "Ключи Telegram вшиты, вводить ничего не надо.
+
+          - \`Hivogram-${VERSION}-windows-x64-setup.exe\` — Windows 10/11. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».
+          - \`Hivogram-${VERSION}-android.apk\` — Android 7+.
+          - iPhone и браузер: https://hivogram.pages.dev (в Safari → «Поделиться» → «На экран Домой»)."

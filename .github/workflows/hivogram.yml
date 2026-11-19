@@ -193,7 +193,7 @@ jobs:
           cd out && sha256sum * > SHA256SUMS.txt && ls -l
           VERSION=$(ls Hivogram-*.* | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
           gh release create "hivogram-v${VERSION}-build.${{ github.run_number }}" * \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --repo "$GITHUB_REPOSITORY" --latest \
             --title "Hivogram ${VERSION}, сборка ${{ github.run_number }}" \
             --notes "Ключи Telegram вшиты, вводить ничего не надо. Ветка \`${REF}\`.
 
