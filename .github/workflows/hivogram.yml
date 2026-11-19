@@ -31,6 +31,8 @@ env:
   npm_config_node_options: --no-experimental-strip-types --max-old-space-size=8192
   TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
   TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+  # Cloud updates: every build knows its number and compares it with the `-build.<n>` of the releases here
+  HIVOGRAM_BUILD: ${{ github.run_number }}
 
 jobs:
   windows:

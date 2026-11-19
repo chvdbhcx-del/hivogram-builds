@@ -18,6 +18,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # Cloud updates: the app compares its number with the `-build.<n>` of the lite-v… releases here
+  HIVOGRAM_BUILD: ${{ github.run_number }}
 
 jobs:
   windows:
