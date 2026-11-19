@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: hivogram
+  group: hivogram-${{ inputs.targets }}
   cancel-in-progress: false
 
 env:
