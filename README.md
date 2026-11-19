@@ -3,13 +3,13 @@
 <h1 align="center">Hivogram: сборки</h1>
 
 <p align="center">Готовые установщики Hivogram, Telegram для десятков аккаунтов в одном окне.<br>
-<b><a href="../../releases/latest">⬇ Скачать последнюю версию</a></b></p>
+<b><a href="https://github.com/chvdbhcx-del/hivogram-builds/releases/latest">⬇ Скачать последнюю версию</a></b></p>
 
 ![Hivogram](screens/main-dark.png)
 
 ## Что скачать
 
-| Платформа | Файл в [Releases](../../releases) |
+| Платформа | Файл в [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases) |
 |---|---|
 | Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` |
 | Android 7+ | `Hivogram-…-android.apk` |
@@ -30,9 +30,9 @@
 
 | Workflow | Что делает |
 |---|---|
-| [Hivogram](../../actions/workflows/hivogram.yml) | Windows `.exe` + Android `.apk` в Releases, веб-приложение на hivogram.pages.dev |
-| [Oxigram](../../actions/workflows/oxigram.yml) | лёгкая Windows-версия на Rust, `.exe` в Releases |
-| [Publish a run](../../actions/workflows/publish-run.yml) | выкладывает в Releases файлы уже прошедшего прогона Hivogram |
+| [Hivogram](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/hivogram.yml) | Windows `.exe` + Android `.apk` в Releases, веб-приложение на hivogram.pages.dev |
+| [Oxigram](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/oxigram.yml) | лёгкая Windows-версия на Rust, `.exe` в Releases |
+| [Publish a run](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/publish-run.yml) | выкладывает в Releases файлы уже прошедшего прогона Hivogram |
 
 Запуск: Actions → workflow → Run workflow, там же можно выбрать ветку исходников.
 
