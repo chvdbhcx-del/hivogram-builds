@@ -14,15 +14,15 @@
 | Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` |
 | Android 7+ | `Hivogram-…-android.apk` |
 | iPhone и любой браузер | без установки: <https://hivogram.pages.dev>, в Safari «Поделиться» → «На экран Домой» |
-| Windows, лёгкая версия на Rust | `hivogram-oxigram-windows-x64-…-setup.exe` |
+| Windows, Hivogram Lite (лёгкая версия на Rust) | `hivogram-lite-windows-x64-…-setup.exe` |
 
 Ключи Telegram уже внутри: после установки просто войдите по номеру телефона.
 
 Если Windows SmartScreen ругается, нажмите «Подробнее» → «Выполнить в любом случае»: сборки без цифровой подписи. Если Android не ставит APK поверх старой версии, удалите старую и поставьте заново.
 
-| Телефон | Лёгкая версия (Oxigram) |
+| Телефон | Hivogram Lite |
 |---|---|
-| ![Телефон](screens/phone-dark.png) | ![Oxigram](screens/oxigram-dark.png) |
+| ![Телефон](screens/phone-dark.png) | ![Hivogram Lite](screens/lite-dark.png) |
 
 ## Как это собирается
 
@@ -31,7 +31,7 @@
 | Workflow | Что делает |
 |---|---|
 | [Hivogram](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/hivogram.yml) | Windows `.exe` + Android `.apk` в Releases, веб-приложение на hivogram.pages.dev |
-| [Oxigram](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/oxigram.yml) | лёгкая Windows-версия на Rust, `.exe` в Releases |
+| [Hivogram Lite](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/lite.yml) | лёгкая Windows-версия на Rust, `.exe` в Releases |
 | [Publish a run](https://github.com/chvdbhcx-del/hivogram-builds/actions/workflows/publish-run.yml) | выкладывает в Releases файлы уже прошедшего прогона Hivogram |
 
 Запуск: Actions → workflow → Run workflow, там же можно выбрать ветку исходников.
@@ -40,7 +40,7 @@
 
 | Секрет | Зачем |
 |---|---|
-| `SOURCE_TOKEN` | fine-grained токен GitHub: доступ к `alltginone` и `hivogram-oxigram`, Contents: Read-only |
+| `SOURCE_TOKEN` | fine-grained токен GitHub: доступ к обоим приватным репозиториям с исходниками, Contents: Read-only |
 | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` | ключи Hivogram, вшиваются во все сборки |
 | `CLOUDFLARE_API_TOKEN` | заливка на Cloudflare Pages (токен с шаблона «Edit Cloudflare Workers») |
 | `VAPID_KEY` | необязательно: Web Push-ключ Telegram, иначе берётся с web.telegram.org/a |
