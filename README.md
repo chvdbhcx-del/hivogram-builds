@@ -1,32 +1,29 @@
-<p align="center"><img src="screens/icon.png" width="96" alt=""></p>
+<p align="center"><img src="screens/icon.png" width="80" alt=""></p>
 
 <h1 align="center">Hivogram: сборки</h1>
 
-<p align="center">Готовые установщики Hivogram, Telegram для десятков аккаунтов в одном окне.<br>
-<b><a href="https://github.com/chvdbhcx-del/hivogram-builds/releases/latest">⬇ Скачать последнюю версию</a></b></p>
+Готовые сборки Hivogram и Hivogram Lite. Исходники в приватном `alltginone`, здесь только workflow и [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases).
 
 ![Hivogram](screens/main-dark.png)
 
-## Что скачать
+| Android | iPhone | Hivogram Lite |
+|---|---|---|
+| ![](screens/android-dark.png) | ![](screens/iphone-inbox.png) | ![](screens/lite-dark.png) |
 
-| Платформа | Файл в [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases) |
+## Файлы
+
+| Платформа | Где |
 |---|---|
-| Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` |
-| Android 7+ | `Hivogram-…-android.apk` |
-| iPhone и любой браузер | без установки: <https://hivogram.pages.dev>, в Safari «Поделиться» → «На экран Домой» |
-| Windows, Hivogram Lite (лёгкая версия на Rust) | `hivogram-lite-windows-x64-…-setup.exe` |
+| Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` в Releases |
+| Android 7+ | `Hivogram-…-android.apk` в Releases |
+| iPhone, браузер | <https://hivogram.pages.dev> |
+| Windows, Hivogram Lite | `hivogram-lite-windows-x64-…-setup.exe` в Releases |
 
-Ключи Telegram уже внутри: после установки просто войдите по номеру телефона.
+Сборки без цифровой подписи, SmartScreen может предупредить.
 
-Если Windows SmartScreen ругается, нажмите «Подробнее» → «Выполнить в любом случае»: сборки без цифровой подписи. Если Android не ставит APK поверх старой версии, удалите старую и поставьте заново.
+## Структура
 
-| Телефон | Hivogram Lite |
-|---|---|
-| ![Телефон](screens/phone-dark.png) | ![Hivogram Lite](screens/lite-dark.png) |
-
-## Как это собирается
-
-Репозиторий публичный только ради бесплатных минут GitHub Actions. Исходники лежат в приватном репозитории и забираются по секрету `SOURCE_TOKEN`, здесь только workflow и готовые файлы.
+Репозиторий публичный ради бесплатных минут GitHub Actions. Исходники забираются по секрету `SOURCE_TOKEN`.
 
 | Workflow | Что делает |
 |---|---|
