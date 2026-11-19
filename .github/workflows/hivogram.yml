@@ -239,7 +239,7 @@ jobs:
         env:
           VAPID_KEY: ${{ secrets.VAPID_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'eacbea7296b962fa85553489df97d99d' }}   # account id is not a secret
         run: |
           [ -n "$VAPID_KEY" ] || unset VAPID_KEY   # empty = read Telegram's key from web.telegram.org/a
           npm run deploy:pages
