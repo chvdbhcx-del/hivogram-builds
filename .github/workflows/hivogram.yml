@@ -254,7 +254,7 @@ jobs:
             missing=0; checked=0
             while read -r f; do
               checked=$((checked+1))
-              code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/$f")
+              code=$(curl -sL -o /dev/null -w '%{http_code}' "$BASE/$f")
               if [ "$code" != 200 ]; then missing=$((missing+1)); echo "  $code $f"; fi
             done < <(awk 'NR % 25 == 0' "$RUNNER_TEMP/files.txt"; tail -n 20 "$RUNNER_TEMP/files.txt")
             echo "attempt $attempt: $missing of $checked missing at $BASE"

@@ -1,0 +1,19 @@
+# Temporary: finds out why GITHUB_TOKEN gets 403 creating releases here.
+name: Release probe
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          gh api "repos/$GITHUB_REPOSITORY" --jq '{visibility, default_branch, permissions}' || true
+          gh api "repos/$GITHUB_REPOSITORY/rulesets" || true
+          gh release create "probe-a-${{ github.run_id }}" --repo "$GITHUB_REPOSITORY" --notes a --draft || true
+          gh release create "probe-b-${{ github.run_id }}" --repo "$GITHUB_REPOSITORY" --notes b --target "$GITHUB_SHA" || true
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/probe-c-${{ github.run_id }}" -f sha="$GITHUB_SHA" || true
+          gh release list --repo "$GITHUB_REPOSITORY" || true
