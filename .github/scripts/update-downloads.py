@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Rewrites the downloads table in README.md (between the downloads markers) from this repo's releases.
 
-Each row is the newest release that has that file, so a build where one target failed still leaves
-the other rows on the newest working file. Usage: update-downloads.py <releases.json> <README.md>
+Links point at the files of the shared release hivogram-latest (see release-all.sh). Usage: update-downloads.py <releases.json> <README.md>
 """
 import json, re, sys
 
@@ -10,21 +9,21 @@ releases_path, readme_path = sys.argv[1], sys.argv[2]
 releases = [r for r in json.load(open(releases_path)) if not r.get("draft")]
 releases.sort(key=lambda r: r.get("published_at") or "", reverse=True)
 
-def newest(tag_prefix, asset_re):
-    for r in releases:
-        if not r["tag_name"].startswith(tag_prefix):
-            continue
-        for a in r.get("assets", []):
-            if re.search(asset_re, a["name"]):
-                return r, a
+SHARED = "hivogram-latest"  # the one release with every version (.github/scripts/release-all.sh)
+shared = next((r for r in releases if r["tag_name"] == SHARED), None)
+
+def newest(_prefix, asset_re):
+    for a in (shared or {}).get("assets", []):
+        if re.search(asset_re, a["name"]):
+            return a, a
     return None, None
 
-def build_of(r):
-    m = re.search(r"-v([0-9.]+)-build\.(\d+)$", r["tag_name"])
-    return f"{m.group(1)}, сборка {m.group(2)}" if m else r["tag_name"]
+def build_of(a):
+    m = re.search(r"-([0-9.]+)-build\.(\d+)", a["name"])
+    return f"{m.group(1)}, сборка {m.group(2)}" if m else ""
 
-def date_of(r):
-    d = (r.get("published_at") or "")[:10]
+def date_of(a):
+    d = (a.get("updated_at") or a.get("created_at") or "")[:10]
     return f"{d[8:10]}.{d[5:7]}.{d[0:4]}" if d else ""
 
 rows = []
@@ -40,11 +39,14 @@ def row(label, what, tag_prefix, asset_re, extra=None):
             link += f" · [{extra[0]}]({e['browser_download_url']})"
     rows.append(f"| **{label}** | {what} | {link} | {build_of(r)} | {date_of(r)} |")
 
-row("WEBA", "Windows 10/11, основная версия", "hivogram-v", r"-windows-x64-setup\.exe$")
-row("APK", "Android 7+", "hivogram-v", r"-android\.apk$")
+row("WEBA", "Windows 10/11, основная версия", "", r"^Hivogram-WEBA-.*-setup\.exe$")
+row("APK", "Android 7+", "", r"^Hivogram-APK-.*\.apk$")
 rows.append("| **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |")
-row("UNI", "Windows 10/11, версия на Unigram", "unigram-v", r"\.msixbundle$", ("сертификат", r"\.cer$"))
-row("Rust", "Windows, лёгкая версия для слабых ПК", "lite-v", r"-setup\.exe$")
+if newest("", r"^Hivogram-UNI-.*-setup\.exe$")[0]:
+    row("UNI", "Windows 10/11, версия на Unigram", "", r"^Hivogram-UNI-.*-setup\.exe$")
+else:
+    row("UNI", "Windows 10/11, версия на Unigram", "", r"^Hivogram-UNI-.*\.msixbundle$", ("сертификат", r"^Hivogram-UNI\.cer$"))
+row("Rust", "Windows, лёгкая версия для слабых ПК", "", r"^Hivogram-Rust-.*-setup\.exe$")
 
 table = "\n".join([
     "| | Что | Файл | Версия | Дата |",

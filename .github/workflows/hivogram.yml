@@ -256,7 +256,7 @@ jobs:
           TAG="hivogram-v${VERSION}-build.${{ github.run_number }}"
           ../builds/.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG"
           gh release create "$TAG" * \
-            --repo "$GITHUB_REPOSITORY" --latest \
+            --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram ${VERSION}, сборка ${{ github.run_number }}" \
             --notes "Ключи Telegram вшиты, вводить ничего не надо. Ветка \`${REF}\`.
 
