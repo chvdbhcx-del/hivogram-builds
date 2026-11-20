@@ -1,0 +1,22 @@
+# One-off: removes old releases and their tags, keeping Hivogram build 15 and the latest Lite release.
+name: Cleanup old releases
+on:
+  push:
+    branches: [claude/project-thread-e8a6j5]
+    paths: [.github/workflows/cleanup-releases.yml]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in lite-v0.3.0-build.3 lite-v0.3.0-build.2 lite-v0.3.0-build.1 \
+                     hivogram-v0.2.0-run.44593336875 hivogram-v0.2.0-build.9 \
+                     hivogram-v0.2.0-build.7 hivogram-v0.2.0-build.6; do
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes && echo "deleted $tag"
+          done
+          gh release list --repo "$GITHUB_REPOSITORY"
