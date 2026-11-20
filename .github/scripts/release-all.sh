@@ -16,7 +16,7 @@ gh api "repos/$GH_REPO/releases?per_page=100" > "$work/releases.json"
 # plan.tsv: <label> <source tag> <source asset> <new name>   (newest release that has that file)
 python3 - "$work/releases.json" > "$work/plan.tsv" <<'PY'
 import json, re, sys
-rs = [r for r in json.load(open(sys.argv[1])) if not r["draft"]]
+rs = [r for r in json.load(open(sys.argv[1])) if not r["draft"] and not r.get("prerelease")]
 rs.sort(key=lambda r: r.get("published_at") or "", reverse=True)
 def pick(label, prefix, pattern, name):
     for r in rs:
@@ -81,7 +81,7 @@ fi
 # one still comes from (e.g. the APK when the newest build's Android job failed); older builds go.
 python3 - "$work/releases.json" "$work/plan.tsv" > "$work/old.txt" <<'PY'
 import json, re, sys
-rs = [r for r in json.load(open(sys.argv[1])) if not r["draft"]]
+rs = [r for r in json.load(open(sys.argv[1])) if not r["draft"] and not r.get("prerelease")]
 used = {l.split("\t")[1] for l in open(sys.argv[2]) if l.strip()}  # still the source of a file in the shared one
 rs.sort(key=lambda r: r.get("published_at") or "", reverse=True)
 seen = set()
