@@ -29,8 +29,7 @@ env:
   ANDROID_NDK_VERSION: '27.2.12479018'
   # Web A's tsc/eslint/vite need more heap (client/.npmrc overrides NODE_OPTIONS)
   npm_config_node_options: --no-experimental-strip-types --max-old-space-size=8192
-  TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-  TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+  # TELEGRAM_API_ID / TELEGRAM_API_HASH are given only to the steps that check them or build them in
   # Cloud updates: every build knows its number and compares it with the `-build.<n>` of the releases here
   HIVOGRAM_BUILD: ${{ github.run_number }}
 
@@ -55,6 +54,9 @@ jobs:
           persist-credentials: false
       - name: Keys present?
         shell: bash
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: '[ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }'
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -74,6 +76,9 @@ jobs:
       - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
       - run: npm run fetch:weba
       - name: tauri build (beforeBuildCommand = npm run build:web)
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: npx tauri build --ci --bundles nsis
       - name: Collect
         shell: bash
@@ -106,6 +111,9 @@ jobs:
           path: src
           persist-credentials: false
       - name: Keys present?
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: '[ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }'
       - name: Free disk space
         working-directory: .
@@ -161,6 +169,9 @@ jobs:
             echo "keyPassword=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
           } > keystore.properties
       - name: tauri android build (beforeBuildCommand = npm run build:web)
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: npx tauri android build --ci --apk --target aarch64 armv7
       - name: Collect
         run: |
@@ -226,6 +237,8 @@ jobs:
       - name: Secrets present?
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           [ -f scripts/build-pages.mjs ] || { echo "::error::No web app build (scripts/build-pages.mjs) on ${{ inputs.ref }}"; exit 1; }
           [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::Secret CLOUDFLARE_API_TOKEN is not set"; exit 1; }
@@ -242,6 +255,8 @@ jobs:
       - run: npm run fetch:weba
       - name: Build + deploy (wrangler pages deploy)
         env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           VAPID_KEY: ${{ secrets.VAPID_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'eacbea7296b962fa85553489df97d99d' }}   # account id is not a secret
