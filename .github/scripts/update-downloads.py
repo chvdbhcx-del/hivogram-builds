@@ -6,7 +6,7 @@ Links point at the files of the shared release v<date> (see release-all.sh). Usa
 import json, re, sys
 
 releases_path, readme_path = sys.argv[1], sys.argv[2]
-releases = [r for r in json.load(open(releases_path)) if not r.get("draft")]
+releases = [r for r in json.load(open(releases_path)) if not r.get("draft") and not r.get("prerelease")]
 releases.sort(key=lambda r: r.get("published_at") or "", reverse=True)
 
 # the one release with every version (.github/scripts/release-all.sh)

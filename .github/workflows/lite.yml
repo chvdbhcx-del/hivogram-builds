@@ -121,7 +121,10 @@ jobs:
           TAG="lite-v${VERSION}-build.${BUILD}"
           cd dl/out && sha256sum * > SHA256SUMS-lite.txt && ls -l
           ../../builds/.github/scripts/sign-sums.sh SHA256SUMS-lite.txt "$TAG"
-          gh release create "$TAG" * \
+          # A test build of another branch is a pre-release: the in-app updater skips those
+          PRE=""
+          [ "$REF" = main ] || PRE="--prerelease"
+          gh release create "$TAG" * $PRE \
             --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram Lite ${VERSION}, сборка ${BUILD}" \
             --notes "Windows 10/11 x64, ключи Telegram вшиты. Ветка \`${REF}\`. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае»."
