@@ -1,33 +1,48 @@
-# Keeps the «Скачать» table in README.md pointing at the newest file of every version
-# (WEBA, APK, UNI, Rust). Runs after every build workflow, on any new release, hourly as a fallback, or by hand.
-name: Downloads table
+# ONE release «Hivogram — все версии» (tag hivogram-latest, Latest) with the newest file of every version
+# (WEBA, APK, UNI, Rust + сайт link), and the «Скачать» table in README.md pointing at it.
+# Runs after every build workflow, on any release published from outside (Unigram from the PC), hourly as a
+# fallback, or by hand (force = rebuild the shared release even if nothing changed).
+name: Shared release
 on:
   workflow_run:
     workflows: [Hivogram, Hivogram Lite, Publish a run]
     types: [completed]
   release:
-    types: [published, edited, deleted]
+    types: [published]
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild the shared release even if it is up to date
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
-  group: downloads-table
+  group: shared-release
   cancel-in-progress: false
 jobs:
   update:
+    # Our own re-creation of hivogram-latest publishes a release too: don't react to it.
+    if: github.event_name != 'release' || github.event.release.tag_name != 'hivogram-latest'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
-      - name: Rebuild the table
+      - name: Shared release
         env:
-          GH_TOKEN: ${{ github.token }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          FORCE: ${{ inputs.force || false }}
+        run: .github/scripts/release-all.sh
+      - name: Rebuild the README table
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          gh api "repos/$GH_REPO/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
           python3 .github/scripts/update-downloads.py "$RUNNER_TEMP/releases.json" README.md
       - name: Commit if changed
         run: |
