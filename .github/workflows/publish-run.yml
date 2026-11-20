@@ -22,9 +22,16 @@ jobs:
           for t in $(gh release list --limit 100 --json tagName --jq '.[].tagName | select(startswith("probe-"))'); do gh release delete "$t" --yes --cleanup-tag || true; done
           for r in $(gh api "repos/$GH_REPO/git/matching-refs/tags/probe-" --jq '.[].ref'); do gh api -X DELETE "repos/$GH_REPO/git/$r" || true; done
           for id in $(gh api "repos/$GH_REPO/releases" --jq '.[] | select(.draft and .name == "") | .id'); do gh api -X DELETE "repos/$GH_REPO/releases/$id" || true; done
+      # Only the signer script of this repo: it signs SHA256SUMS.txt for the in-app updaters
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builds
+          sparse-checkout: .github/scripts
+          persist-credentials: false
       - name: Download and release
         env:
           RUN_ID: ${{ inputs.run_id }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::run_id must be the number from the run's URL"; exit 1; }
           WORKFLOW=$(gh run view "$RUN_ID" --json workflowName --jq .workflowName)
@@ -38,7 +45,9 @@ jobs:
           sha256sum * > SHA256SUMS.txt && ls -l
           VERSION=$(ls Hivogram-*.* | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Bad version '$VERSION'"; exit 1; }
-          gh release create "hivogram-v${VERSION}-build.${BUILD}" * --latest \
+          TAG="hivogram-v${VERSION}-build.${BUILD}"
+          ../builds/.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG"
+          gh release create "$TAG" * --latest \
             --title "Hivogram ${VERSION}, сборка ${BUILD}" \
             --notes "Ключи Telegram вшиты, вводить ничего не надо.
 

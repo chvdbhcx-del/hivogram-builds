@@ -1,0 +1,123 @@
+# Checks of the private repo chvdbhcx-del/alltginone (its own Actions cannot run): versions, rustfmt, clippy and
+# tests of the Tauri shell, the host page's types and build, Hivogram Lite's core tests and clippy.
+# Hivogram and Hivogram Lite call it first (`needs: check`), so a broken source never gets published.
+# Read-only: the source is checked out with SOURCE_TOKEN, nothing of it can write here.
+name: Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch of alltginone to check
+        default: main
+      lite:
+        description: Check Hivogram Lite (lite/)
+        type: boolean
+        default: true
+      shell:
+        description: Check the Tauri shell and the host page
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      lite:
+        description: Also check Hivogram Lite (lite/)
+        type: boolean
+        default: true
+      shell:
+        description: Also check the Tauri shell and the host page
+        type: boolean
+        default: true
+    secrets:
+      SOURCE_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: '0'
+  NODE_VERSION: '24'
+
+jobs:
+  check:
+    name: Check (fmt, clippy, tests, host, Lite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: chvdbhcx-del/alltginone
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          persist-credentials: false
+      - name: Install Tauri Linux deps (docs/BUILD.md)
+        if: inputs.shell
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libxdo-dev libssl-dev patchelf
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: inputs.shell
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/host/package-lock.json
+      - uses: dtolnay/rust-toolchain@df2a88e9fe4098bad09cb42c3dec7187f15861fc # master
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: |
+            src -> target
+            src/lite -> target
+          key: check
+      - name: Versions match?
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
+
+      - name: cargo fmt
+        if: inputs.shell
+        run: cargo fmt --all --check
+      - name: Host (npm ci, tsc, vite build)
+        if: inputs.shell
+        working-directory: src/host
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+          npx vite build
+      - name: Stub dist (tauri::generate_context! needs frontendDist to exist)
+        if: inputs.shell
+        run: |
+          mkdir -p dist
+          [ -f dist/index.html ] || echo '<!doctype html><title>stub</title>' > dist/index.html
+      - name: cargo clippy (shell)
+        if: inputs.shell
+        run: cargo clippy -p orbit --all-targets -- -D warnings
+      - name: cargo test (shell)
+        if: inputs.shell
+        run: cargo test -p orbit
+
+      - name: cargo test (Lite core)
+        if: inputs.lite
+        run: |
+          [ -f lite/Cargo.toml ] || { echo "::warning::No lite/ on this ref"; exit 0; }
+          cd lite && cargo test --locked -p hivogram-core
+      - name: cargo clippy (Lite core, warnings do not fail)
+        if: inputs.lite
+        run: |
+          [ -f lite/Cargo.toml ] || exit 0
+          cd lite && cargo clippy --locked -p hivogram-core --all-targets

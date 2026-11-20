@@ -22,7 +22,17 @@ env:
   HIVOGRAM_BUILD: ${{ github.run_number }}
 
 jobs:
+  # Lite's core tests and clippy first: nothing is built or published when they fail
+  check:
+    uses: ./.github/workflows/check.yml
+    with:
+      ref: ${{ inputs.ref }}
+      shell: false
+    secrets:
+      SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
   windows:
+    needs: check
     runs-on: windows-latest
     timeout-minutes: 90
     defaults:
@@ -93,16 +103,25 @@ jobs:
         with:
           name: lite-windows
           path: dl
+      # Only the signer script of this repo (not the source): it signs SHA256SUMS-lite.txt for the in-app updater
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builds
+          sparse-checkout: .github/scripts
+          persist-credentials: false
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
           REF: ${{ inputs.ref }}
           BUILD: ${{ github.run_number }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           VERSION=$(cat dl/version.txt)
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Bad version '$VERSION'"; exit 1; }
+          TAG="lite-v${VERSION}-build.${BUILD}"
           cd dl/out && sha256sum * > SHA256SUMS-lite.txt && ls -l
-          gh release create "lite-v${VERSION}-build.${BUILD}" * \
+          ../../builds/.github/scripts/sign-sums.sh SHA256SUMS-lite.txt "$TAG"
+          gh release create "$TAG" * \
             --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram Lite ${VERSION}, сборка ${BUILD}" \
             --notes "Windows 10/11 x64, ключи Telegram вшиты. Ветка \`${REF}\`. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае»."

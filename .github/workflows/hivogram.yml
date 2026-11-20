@@ -38,7 +38,17 @@ env:
   HIVOGRAM_BUILD: ${{ github.run_number }}
 
 jobs:
+  # fmt, clippy, tests and the host build of the source first: nothing below runs (or publishes) when they fail
+  check:
+    uses: ./.github/workflows/check.yml
+    with:
+      ref: ${{ inputs.ref }}
+      lite: false
+    secrets:
+      SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
   windows:
+    needs: check
     if: contains(inputs.targets, 'windows')
     runs-on: windows-latest
     timeout-minutes: 90
@@ -107,6 +117,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    needs: check
     if: contains(inputs.targets, 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -218,8 +229,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [windows, android]
-    if: always() && !cancelled() && inputs.publish && (needs.windows.result == 'success' || needs.android.result == 'success')
+    needs: [check, windows, android]
+    if: always() && !cancelled() && inputs.publish && needs.check.result == 'success' && (needs.windows.result == 'success' || needs.android.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -228,14 +239,23 @@ jobs:
         with:
           path: out
           merge-multiple: true
+      # Only the signer script of this repo (not the source): it signs SHA256SUMS.txt for the in-app updaters
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builds
+          sparse-checkout: .github/scripts
+          persist-credentials: false
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
           REF: ${{ inputs.ref }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           cd out && sha256sum * > SHA256SUMS.txt && ls -l
           VERSION=$(ls Hivogram-*.* | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
-          gh release create "hivogram-v${VERSION}-build.${{ github.run_number }}" * \
+          TAG="hivogram-v${VERSION}-build.${{ github.run_number }}"
+          ../builds/.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG"
+          gh release create "$TAG" * \
             --repo "$GITHUB_REPOSITORY" --latest \
             --title "Hivogram ${VERSION}, сборка ${{ github.run_number }}" \
             --notes "Ключи Telegram вшиты, вводить ничего не надо. Ветка \`${REF}\`.
@@ -245,6 +265,7 @@ jobs:
           - iPhone и браузер: https://hivogram.pages.dev (в Safari → «Поделиться» → «На экран Домой»)."
 
   pages:
+    needs: check
     if: contains(inputs.targets, 'pages')
     runs-on: ubuntu-latest
     timeout-minutes: 60
