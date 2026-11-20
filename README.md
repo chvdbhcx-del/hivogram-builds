@@ -110,7 +110,7 @@
 | Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` из [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest) |
 | Android 7+ | `Hivogram-…-android.apk` из [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest), работает в фоне и не теряет уведомления |
 | iPhone | <https://hivogram.pages.dev> в Safari → «Поделиться» → «На экран „Домой“» |
-| Windows, слабые ПК | Hivogram Lite: `hivogram-lite-windows-x64-…-setup.exe` из [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest), отдельный лёгкий клиент, в разы меньше памяти |
+| Windows, слабые ПК | Hivogram Lite: `hivogram-lite-windows-x64-…-setup.exe` из [релизов Lite](https://github.com/chvdbhcx-del/hivogram-builds/releases?q=lite&expanded=true), отдельный лёгкий клиент, в разы меньше памяти |
 
 Windows может показать предупреждение SmartScreen, потому что установщик пока без цифровой подписи: «Подробнее» → «Выполнить в любом случае».
 
