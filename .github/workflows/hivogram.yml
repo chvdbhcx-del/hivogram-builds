@@ -13,6 +13,10 @@ on:
       targets:
         description: What to build (windows, android, pages)
         default: windows,android,pages
+      publish:
+        description: Publish a release (false = test build, artifacts only)
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -199,6 +203,9 @@ jobs:
           APK=$(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | head -n1)
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/liborbit_lib.so'
           unzip -l "$APK" | grep -q 'lib/armeabi-v7a/liborbit_lib.so'
+          # Signing certificate (public): must stay the same across releases, or updates won't install
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          if [ -x "$APKSIGNER" ]; then "$APKSIGNER" verify --print-certs "$APK" | grep -E 'certificate (DN|SHA-256)' | tee -a "$GITHUB_STEP_SUMMARY" || true; else echo "::warning::apksigner not found, signer not printed"; fi
           mkdir -p ../out
           cp "$APK" "../out/Hivogram-${VERSION}-android.apk"
           ls -l ../out
@@ -212,7 +219,7 @@ jobs:
 
   release:
     needs: [windows, android]
-    if: always() && !cancelled() && (needs.windows.result == 'success' || needs.android.result == 'success')
+    if: always() && !cancelled() && inputs.publish && (needs.windows.result == 'success' || needs.android.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
