@@ -16,11 +16,11 @@
 <!-- downloads:start -->
 | | Что | Файл | Версия | Дата |
 |---|---|---|---|---|
-| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.0-build.21-setup.exe) | 0.2.0, сборка 21 | 20.11.2026 |
-| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.0-build.21.apk) | 0.2.0, сборка 21 | 20.11.2026 |
+| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.0-build.22-setup.exe) | 0.2.0, сборка 22 | 20.11.2026 |
+| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.0-build.22.apk) | 0.2.0, сборка 22 | 20.11.2026 |
 | **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
 | **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.2-build.2-x64.msixbundle) · [сертификат](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI.cer) | 13.2.2, сборка 2 | 20.11.2026 |
-| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.5-setup.exe) | 0.3.0, сборка 5 | 20.11.2026 |
+| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.7-setup.exe) | 0.3.0, сборка 7 | 20.11.2026 |
 <!-- downloads:end -->
 
 - **WEBA** — основная версия для Windows. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».
@@ -31,17 +31,29 @@
 
 Дальше все версии обновляются сами. Старые сборки: [все релизы](https://github.com/chvdbhcx-del/hivogram-builds/releases).
 
-![Hivogram, Windows](docs/screens/main-light.png)
+<p align="center"><img src="docs/screens/desktop-allchats.png" width="100%" alt="Hivogram на Windows: все чаты всех аккаунтов в одном списке"></p>
 
-| Общая лента «Входящие» | Рассылки | Ночная тема |
-|---|---|---|
-| ![](docs/screens/inbox-dark.png) | ![](docs/screens/broadcasts-dark.png) | ![](docs/screens/main-dark.png) |
+<table>
+<tr>
+<td width="50%" align="center" valign="top"><b>«Входящие»</b><br><img src="docs/screens/desktop-inbox.png" width="100%" alt="«Входящие»"></td>
+<td width="50%" align="center" valign="top"><b>Рассылки</b><br><img src="docs/screens/desktop-broadcasts.png" width="100%" alt="Рассылки"></td>
+</tr>
+<tr>
+<td width="50%" align="center" valign="top"><b>Звонок на другой аккаунт</b><br><img src="docs/screens/desktop-call.png" width="100%" alt="Звонок на другой аккаунт"></td>
+<td width="50%" align="center" valign="top"><b>Настройки</b><br><img src="docs/screens/desktop-settings.png" width="100%" alt="Настройки"></td>
+</tr>
+</table>
 
-| Android, чаты | Android, «Входящие» | iPhone, «Входящие» | iPhone, чат |
-|---|---|---|---|
-| ![](docs/screens/android-chats.png) | ![](docs/screens/android-inbox.png) | ![](docs/screens/iphone-inbox.png) | ![](docs/screens/iphone-chat.png) |
+<table>
+<tr>
+<td width="25%" align="center" valign="top"><b>Android, чаты</b><br><img src="docs/screens/android-chats.png" width="100%" alt="Android, чаты"></td>
+<td width="25%" align="center" valign="top"><b>Android, «Входящие»</b><br><img src="docs/screens/android-inbox.png" width="100%" alt="Android, «Входящие»"></td>
+<td width="25%" align="center" valign="top"><b>iPhone, все чаты</b><br><img src="docs/screens/iphone-allchats.png" width="100%" alt="iPhone, все чаты"></td>
+<td width="25%" align="center" valign="top"><b>iPhone, чат</b><br><img src="docs/screens/iphone-chat.png" width="100%" alt="iPhone, чат"></td>
+</tr>
+</table>
 
-<sub>На скриншотах выдуманные аккаунты и чаты.</sub>
+<sub>Скриншоты в демо-режиме, аккаунты и чаты выдуманные. ПК: окно 1440×900. Телефон: экран 390×844.</sub>
 
 ## Кому это нужно
 
@@ -55,7 +67,7 @@
 
 Слева полоса со всеми аккаунтами: аватар, подпись, свой цвет и счётчик непрочитанных. Клик переключает аккаунт мгновенно, `Ctrl+1…9` открывает нужный сразу, `Ctrl+Tab` листает аккаунты, начиная с последнего использованного. Наведи на плитку и увидишь, сколько чатов ждут ответа и какое у аккаунта среднее время ответа.
 
-### «Входящие»: одна лента на все аккаунты
+### «Входящие»
 
 Все новые сообщения со всех аккаунтов падают в одну ленту. Каждая карточка подписана аккаунтом и чатом, ответить можно прямо с неё, не открывая чат. Можно отметить прочитанным или отложить на час. Лишнее отсекается правилами: замьюченные чаты, каналы, группы без упоминания, ключевые слова.
 
@@ -88,7 +100,7 @@
 
 Разложите аккаунты по группам: «Продажи», «Поддержка», «Личное». Переключатель групп оставляет в рейле, ленте и списке чатов только нужные аккаунты. У каждой группы могут быть свои уведомления, звук и тихие часы по дням недели.
 
-### Одни настройки на все аккаунты
+### Настройки
 
 Тема, язык, шрифт, анимации и уведомления меняются один раз и сразу во всех аккаунтах. Ниже список аккаунтов, и у каждого свои телеграмные настройки: профиль, приватность, папки, сессии. Интерфейс на русском, украинском и английском.
 
@@ -101,9 +113,14 @@
 - **Один разговор за раз.** Приняли звонок на другом аккаунте — текущий завершается сам, как в Telegram.
 - **Аккаунт со звонком не засыпает,** а экран телефона не гаснет, пока идёт разговор.
 
-| Звонок на другой аккаунт | Входящий | Разговор | Вернуться в звонок |
-|---|---|---|---|
-| ![](docs/screens/call-incoming-other.png) | ![](docs/screens/call-incoming.png) | ![](docs/screens/call-talking.png) | ![](docs/screens/call-bar.png) |
+<table>
+<tr>
+<td width="25%" align="center" valign="top"><b>На другой аккаунт</b><br><img src="docs/screens/call-other.png" width="100%" alt="На другой аккаунт"></td>
+<td width="25%" align="center" valign="top"><b>Входящий</b><br><img src="docs/screens/call-incoming.png" width="100%" alt="Входящий"></td>
+<td width="25%" align="center" valign="top"><b>Разговор</b><br><img src="docs/screens/call-talking.png" width="100%" alt="Разговор"></td>
+<td width="25%" align="center" valign="top"><b>Полоска звонка</b><br><img src="docs/screens/call-bar.png" width="100%" alt="Полоска звонка"></td>
+</tr>
+</table>
 
 Звонят только загруженные аккаунты: спящий в лучшем случае пришлёт уведомление. На iPhone звонок слышно, пока Hivogram открыт: из фона и с закрытым приложением iOS сайтам звонить не даёт.
 
