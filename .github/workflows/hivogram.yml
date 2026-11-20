@@ -72,6 +72,13 @@ jobs:
         with:
           workspaces: src
           key: windows
+      - name: Versions match?
+        shell: bash
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
       - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
       - run: npm run fetch:weba
@@ -122,6 +129,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          # Gradle's caches and wrapper (~/.gradle), keyed on the Android project's build files
+          cache: gradle
+          cache-dependency-path: |
+            src/src-tauri/gen/android/*.gradle*
+            src/src-tauri/gen/android/**/*.gradle*
+            src/src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: 'platform-tools'
@@ -144,6 +157,13 @@ jobs:
         with:
           workspaces: src
           key: android
+      - name: Versions match?
+        shell: bash
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
       - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
       - run: npm run fetch:weba
@@ -250,6 +270,13 @@ jobs:
           cache-dependency-path: |
             src/package-lock.json
             src/host/package-lock.json
+      - name: Versions match?
+        shell: bash
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
       - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
       - run: npm run fetch:weba
