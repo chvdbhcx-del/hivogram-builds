@@ -35,7 +35,7 @@ jobs:
         working-directory: src/lite
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: chvdbhcx-del/alltginone
           ref: ${{ inputs.ref }}
@@ -46,10 +46,11 @@ jobs:
         run: |
           [ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }
           [ -f core/build.rs ] || { echo "::error::${{ inputs.ref }} has no core/build.rs: keys would not be built in"; exit 1; }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@df2a88e9fe4098bad09cb42c3dec7187f15861fc # master
         with:
+          toolchain: stable
           targets: x86_64-pc-windows-msvc
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: src/lite
           key: lite-windows
