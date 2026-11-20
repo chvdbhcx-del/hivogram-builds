@@ -1,4 +1,4 @@
-# ONE release «Hivogram — все версии» (tag all-v<date>, Latest) with the newest file of every version
+# ONE release «Hivogram — все версии» (tag v<date>, Latest) with the newest file of every version
 # (WEBA, APK, UNI, Rust + сайт link), and the «Скачать» table in README.md pointing at it.
 # Runs after every build workflow, on any release published from outside (Unigram from the PC), hourly as a
 # fallback, or by hand (force = rebuild the shared release even if nothing changed).
@@ -25,7 +25,7 @@ concurrency:
 jobs:
   update:
     # Our own new shared release publishes a release too: don't react to it.
-    if: github.event_name != 'release' || !(startsWith(github.event.release.tag_name, 'hivogram-all-') || startsWith(github.event.release.tag_name, 'all-v'))
+    if: github.event_name != 'release' || !(startsWith(github.event.release.tag_name, 'hivogram-all-') || startsWith(github.event.release.tag_name, 'all-v') || startsWith(github.event.release.tag_name, 'v20'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# release-all.sh: keeps ONE release «Hivogram — все версии» (tag all-v<date>, marked Latest: apps and links
+# release-all.sh: keeps ONE release «Hivogram — все версии» (tag v<date>, marked Latest: apps and links
 # find it as /releases/latest) holding the newest
 # file of every version: WEBA (Windows), APK (Android), UNI (Unigram), Rust (Hivogram Lite), plus the сайт link.
 # Every app still publishes its own release (hivogram-v…, lite-v…, unigram-v…): installed apps update from those.
 # Of those only the newest per app is kept, older ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY optional.
 set -euo pipefail
-# A new tag each time, shaped like a version (GitHub orders releases by the version in the tag, and 2026.x
-# beats every app version), so the shared release sits on top of the list.
-TAG="all-v$(date -u +%Y.%-m%d.%-H%M)"
-OLD_RE='^(hivogram-latest|hivogram-all-[0-9.]+|all-v[0-9.]+)$'
+# A new tag each time, v<year>.<monthday>.<hourmin>: GitHub lists it above the app releases (unigram-v…, lite-v…,
+# hivogram-v…), and no app updater takes it for its own.
+TAG="v$(date -u +%Y.%-m%d.%-H%M)"
+OLD_RE='^(hivogram-latest|hivogram-all-[0-9.]+|all-v[0-9.]+|v[0-9]{4}\.[0-9.]+)$'
 here=$(cd "$(dirname "$0")" && pwd)
 work=$(mktemp -d)
 gh api "repos/$GH_REPO/releases?per_page=100" > "$work/releases.json"
@@ -37,9 +37,9 @@ cat "$work/plan.tsv"
 
 want=$(cut -f4 "$work/plan.tsv" | LC_ALL=C sort | tr '\n' ' ')
 have=$(python3 -c "
-import json,sys
+import json,sys,re
 for r in json.load(open('$work/releases.json')):
-    if r['tag_name']=='hivogram-latest' or r['tag_name'].startswith(('hivogram-all-', 'all-v')):
+    if r['tag_name']=='hivogram-latest' or re.match(r'^(hivogram-all-|all-v|v[0-9]{4}\.)', r['tag_name']):
         print(' '.join(sorted(a['name'] for a in r['assets'] if not a['name'].startswith('SHA256SUMS')))); break
 " | tr -d '\n')
 if [ "${want% }" = "${have}" ] && [ "${FORCE:-false}" != true ]; then
