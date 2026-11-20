@@ -16,11 +16,11 @@
 <!-- downloads:start -->
 | | Что | Файл | Версия | Дата |
 |---|---|---|---|---|
-| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-latest/Hivogram-WEBA-0.2.0-build.21-setup.exe) | 0.2.0, сборка 21 | 20.11.2026 |
-| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-latest/Hivogram-APK-0.2.0-build.21.apk) | 0.2.0, сборка 21 | 20.11.2026 |
+| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.0-build.21-setup.exe) | 0.2.0, сборка 21 | 20.11.2026 |
+| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.0-build.21.apk) | 0.2.0, сборка 21 | 20.11.2026 |
 | **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
-| **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-latest/Hivogram-UNI-13.2.2-build.2-x64.msixbundle) · [сертификат](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-latest/Hivogram-UNI.cer) | 13.2.2, сборка 2 | 20.11.2026 |
-| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-latest/Hivogram-Rust-0.3.0-build.5-setup.exe) | 0.3.0, сборка 5 | 20.11.2026 |
+| **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.2-build.2-x64.msixbundle) · [сертификат](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI.cer) | 13.2.2, сборка 2 | 20.11.2026 |
+| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.5-setup.exe) | 0.3.0, сборка 5 | 20.11.2026 |
 <!-- downloads:end -->
 
 - **WEBA** — основная версия для Windows. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».

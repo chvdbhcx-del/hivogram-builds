@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# release-all.sh: keeps ONE release «Hivogram — все версии» (tag hivogram-latest, marked Latest) holding the newest
+# release-all.sh: keeps ONE release «Hivogram — все версии» (tag hivogram-all-<date>, marked Latest: apps and links
+# find it as /releases/latest) holding the newest
 # file of every version: WEBA (Windows), APK (Android), UNI (Unigram), Rust (Hivogram Lite), plus the сайт link.
 # Every app still publishes its own release (hivogram-v…, lite-v…, unigram-v…): installed apps update from those.
 # Of those only the newest per app is kept, older ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY optional.
 set -euo pipefail
-TAG=hivogram-latest
+# A new dated tag each time: GitHub lists a release with a fresh, versioned tag on top of the list.
+TAG="hivogram-all-$(date -u +%Y.%m.%d.%H%M)"
+OLD_RE='^(hivogram-latest|hivogram-all-[0-9.]+)$'
 here=$(cd "$(dirname "$0")" && pwd)
 work=$(mktemp -d)
 gh api "repos/$GH_REPO/releases?per_page=100" > "$work/releases.json"
@@ -35,7 +38,8 @@ want=$(cut -f4 "$work/plan.tsv" | LC_ALL=C sort | tr '\n' ' ')
 have=$(python3 -c "
 import json,sys
 for r in json.load(open('$work/releases.json')):
-    if r['tag_name']=='$TAG': print(' '.join(sorted(a['name'] for a in r['assets'] if not a['name'].startswith('SHA256SUMS'))))
+    if r['tag_name']=='hivogram-latest' or r['tag_name'].startswith('hivogram-all-'):
+        print(' '.join(sorted(a['name'] for a in r['assets'] if not a['name'].startswith('SHA256SUMS')))); break
 " | tr -d '\n')
 if [ "${want% }" = "${have}" ] && [ "${FORCE:-false}" != true ]; then
   echo "Общий релиз уже свежий"
@@ -63,10 +67,13 @@ else
   } > "$work/notes.md"
   cat "$work/notes.md"
 
-  # Re-created each time so it stays on top of the list; the tag moves to the current commit of the default branch.
-  gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+  # Made anew each time it changes, so it stays on top of the list; then the previous one is deleted.
   gh release create "$TAG" "$work"/out/* --title "Hivogram — все версии" --notes-file "$work/notes.md" --latest \
     --target "$(gh api "repos/$GH_REPO" --jq .default_branch)"
+  # the previous shared release goes
+  for old in $(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name' | grep -E "$OLD_RE" | grep -vx "$TAG"); do
+    gh release delete "$old" --yes --cleanup-tag
+  done
 fi
 
 # Only the newest release of each app stays (installed apps update from it), plus any release a file of the shared
@@ -85,4 +92,5 @@ for r in rs:
 PY
 while read -r old; do [ -n "$old" ] && { echo "Удаляю старую сборку $old"; gh release delete "$old" --yes --cleanup-tag; }; done < "$work/old.txt"
 # The app releases must never hold «Latest»: that is the shared one.
-gh release edit "$TAG" --latest >/dev/null
+cur=$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name' | grep -E "$OLD_RE" | head -n1)
+[ -n "$cur" ] && gh release edit "$cur" --latest >/dev/null

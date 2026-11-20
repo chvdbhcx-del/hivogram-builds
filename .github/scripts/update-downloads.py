@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrites the downloads table in README.md (between the downloads markers) from this repo's releases.
 
-Links point at the files of the shared release hivogram-latest (see release-all.sh). Usage: update-downloads.py <releases.json> <README.md>
+Links point at the files of the shared release hivogram-all-<date> (see release-all.sh). Usage: update-downloads.py <releases.json> <README.md>
 """
 import json, re, sys
 
@@ -9,12 +9,14 @@ releases_path, readme_path = sys.argv[1], sys.argv[2]
 releases = [r for r in json.load(open(releases_path)) if not r.get("draft")]
 releases.sort(key=lambda r: r.get("published_at") or "", reverse=True)
 
-SHARED = "hivogram-latest"  # the one release with every version (.github/scripts/release-all.sh)
-shared = next((r for r in releases if r["tag_name"] == SHARED), None)
+# the one release with every version (.github/scripts/release-all.sh)
+shared = next((r for r in releases if r["tag_name"] == "hivogram-latest" or r["tag_name"].startswith("hivogram-all-")), None)
 
 def newest(_prefix, asset_re):
     for a in (shared or {}).get("assets", []):
         if re.search(asset_re, a["name"]):
+            # /releases/latest/download/… survives the shared release being re-made under a new tag
+            a = dict(a, browser_download_url=re.sub(r"/releases/download/[^/]+/", "/releases/latest/download/", a["browser_download_url"]))
             return a, a
     return None, None
 
