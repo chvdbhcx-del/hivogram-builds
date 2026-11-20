@@ -6,9 +6,30 @@
 10, 30, 60 аккаунтов: одна лента сообщений, один список чатов, рассылки по расписанию и инструменты для работы с клиентами.</p>
 
 <p align="center">
-<a href="https://github.com/chvdbhcx-del/hivogram-builds/releases/latest"><b>Скачать для Windows и Android</b></a> ·
-<a href="https://hivogram.pages.dev"><b>Открыть на iPhone</b></a>
+<a href="#скачать"><b>Скачать: Windows, Android, iPhone</b></a>
 </p>
+
+## Скачать
+
+Все версии в одном месте, ссылки ведут на самую свежую сборку и обновляются сами после каждой сборки.
+
+<!-- downloads:start -->
+| | Что | Файл | Версия | Дата |
+|---|---|---|---|---|
+| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-v0.2.0-build.21/Hivogram-0.2.0-windows-x64-setup.exe) | 0.2.0, сборка 21 | 20.11.2026 |
+| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/hivogram-v0.2.0-build.21/Hivogram-0.2.0-android.apk) | 0.2.0, сборка 21 | 20.11.2026 |
+| **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
+| **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/unigram-v13.2.2-build.2/Hivogram-Unigram_13.2.2.0_x64.msixbundle) · [сертификат](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/unigram-v13.2.2-build.2/Hivogram-Unigram.cer) | 13.2.2, сборка 2 | 20.11.2026 |
+| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/download/lite-v0.3.0-build.4/hivogram-lite-windows-x64-hivogram-lite_0.3.0_x64-setup.exe) | 0.3.0, сборка 4 | 19.11.2026 |
+<!-- downloads:end -->
+
+- **WEBA** — основная версия для Windows. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».
+- **APK** — Android, работает в фоне и не теряет уведомления.
+- **сайт** — iPhone: открыть в Safari → «Поделиться» → «На экран „Домой“».
+- **UNI** — та же идея на движке Unigram. Один раз поставь сертификат: открыть `.cer` → «Установить сертификат» → «Локальный компьютер» → «Поместить все сертификаты в следующее хранилище» → «Доверенные лица». Потом двойной клик по `.msixbundle`.
+- **Rust** — Hivogram Lite, отдельный лёгкий клиент, в разы меньше памяти.
+
+Дальше все версии обновляются сами. Старые сборки: [все релизы](https://github.com/chvdbhcx-del/hivogram-builds/releases).
 
 ![Hivogram, Windows](docs/screens/main-light.png)
 
@@ -117,17 +138,6 @@
 - **Режим призрака** (на ваш страх и риск, по умолчанию выключен). Читать чаты без отметки о прочтении, всегда быть «не в сети», не показывать «печатает…», смотреть истории незаметно. Для всех аккаунтов сразу или для каждого отдельно.
 - **Удалённые и изменённые сообщения.** Если собеседник удалил сообщение, оно остаётся у вас с пометкой «удалено». У отредактированного видна прежняя версия. Всё собрано в меню чата «Удалённые и изменённые».
 - **Подписанные обновления.** Приложение само проверяет обновления и ставит только те, что подписаны ключом Hivogram.
-
-## Где работает
-
-| Платформа | Как установить |
-|---|---|
-| Windows 10/11 | `Hivogram-…-windows-x64-setup.exe` из [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest) |
-| Android 7+ | `Hivogram-…-android.apk` из [Releases](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest), работает в фоне и не теряет уведомления |
-| iPhone | <https://hivogram.pages.dev> в Safari → «Поделиться» → «На экран „Домой“» |
-| Windows, слабые ПК | Hivogram Lite: `hivogram-lite-windows-x64-…-setup.exe` из [релизов Lite](https://github.com/chvdbhcx-del/hivogram-builds/releases?q=lite&expanded=true), отдельный лёгкий клиент, в разы меньше памяти |
-
-Windows может показать предупреждение SmartScreen, потому что установщик пока без цифровой подписи: «Подробнее» → «Выполнить в любом случае».
 
 ## Лицензия
 

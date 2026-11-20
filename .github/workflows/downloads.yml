@@ -1,0 +1,38 @@
+# Keeps the «Скачать» table in README.md pointing at the newest file of every version
+# (WEBA, APK, UNI, Rust). Runs after every build workflow, on any new release, hourly as a fallback, or by hand.
+name: Downloads table
+on:
+  workflow_run:
+    workflows: [Hivogram, Hivogram Lite, Publish a run]
+    types: [completed]
+  release:
+    types: [published, edited, deleted]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: downloads-table
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Rebuild the table
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          python3 .github/scripts/update-downloads.py "$RUNNER_TEMP/releases.json" README.md
+      - name: Commit if changed
+        run: |
+          git diff --quiet README.md && { echo "Table is up to date"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "README: свежие ссылки на скачивание" README.md
+          git push
