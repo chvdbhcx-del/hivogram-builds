@@ -19,8 +19,16 @@ adb shell am broadcast -a com.android.systemui.demo -e command notifications -e 
 adb shell am start -W -n $ACT
 sleep 10
 adb shell am force-stop $PKG
-adb shell mkdir -p /sdcard/Android/data/$PKG/files
-[ -s ru.xml ] && adb push ru.xml /sdcard/Android/data/$PKG/files/ru.xml
+# the full Russian pack goes into the app's private files (root on the google_apis image)
+if [ -s ru.xml ]; then
+  adb root; sleep 3; adb wait-for-device
+  APPUID=$(adb shell stat -c %u /data/data/$PKG | tr -d '\r')
+  adb shell mkdir -p /data/data/$PKG/files
+  adb push ru.xml /data/data/$PKG/files/hivogram_ru.xml
+  adb shell chown -R $APPUID:$APPUID /data/data/$PKG/files
+  adb shell restorecon -R /data/data/$PKG/files || true
+  adb shell ls -l /data/data/$PKG/files/hivogram_ru.xml
+fi
 # offline: demo accounts must never reach Telegram
 adb shell svc wifi disable
 adb shell svc data disable
