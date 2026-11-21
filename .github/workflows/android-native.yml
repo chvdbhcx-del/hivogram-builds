@@ -1,5 +1,5 @@
-# Native Android Hivogram: the official Telegram for Android (GPLv2) + alltginone/android/patches.
-# Not Tauri: the whole app is Telegram's own Java/C++ client. Built from the private repo with SOURCE_TOKEN,
+# Native Android Hivogram: Cherrygram (GPLv2 fork of Telegram for Android) + alltginone/android/patches.
+# Not Tauri: the whole app is Cherrygram's Java/C++ client (Telegram base). Built from the private repo with SOURCE_TOKEN,
 # signed with the same permanent key as the other APKs (ANDROID_KEYSTORE_* secrets), Telegram keys built in.
 name: Hivogram Android (native)
 
@@ -68,7 +68,7 @@ jobs:
           packages: 'platform-tools'
       - name: SDK, NDK, CMake
         run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}" "cmake;3.22.1" > /dev/null
-      - name: Telegram + Hivogram patches
+      - name: Cherrygram + Hivogram patches
         run: android/fetch-upstream.sh
       - name: Signing key
         env:
@@ -150,6 +150,6 @@ jobs:
           gh release create "$TAG" * \
             --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram для Android (нативный) ${VERSION}, сборка ${{ github.run_number }}" \
-            --notes "Нативный Hivogram для Android на базе официального Telegram для Android, не Tauri. Ключи Telegram вшиты. Ветка \`${REF}\`.
+            --notes "Нативный Hivogram для Android на базе Cherrygram (форк Telegram для Android), не Tauri. Ключи Telegram вшиты. Ветка \`${REF}\`.
 
           - \`Hivogram-${VERSION}-android-native.apk\` — Android 7+. Ставится рядом с прежним Hivogram (другой идентификатор приложения)."
