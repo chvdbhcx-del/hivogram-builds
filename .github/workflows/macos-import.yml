@@ -1,0 +1,55 @@
+# One-off: import the Telegram for macOS source (github.com/overtake/TelegramSwift, GPLv2) as a snapshot into
+# branch `macos` of the private repo chvdbhcx-del/alltginone, the same way branch `unigram` holds the Unigram fork.
+# Submodules stay links to their upstream repos. Refuses to touch an existing `macos` branch unless `replace` is set.
+name: macOS import
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: TelegramSwift branch or commit
+        default: master
+      replace:
+        description: Overwrite an existing macos branch
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Clone upstream
+        env:
+          REF: ${{ inputs.upstream_ref }}
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/overtake/TelegramSwift up
+          cd up
+          git checkout -q "$REF"
+          echo "SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          git log -1 --format='%H %cd %s'
+          echo "--- .gitmodules"; cat .gitmodules || true
+          echo "--- submodule commits"; git ls-tree -r HEAD | grep ' commit ' || true
+          echo "--- top"; ls -la
+          echo "--- INSTALL"; cat INSTALL.md 2>/dev/null || true
+          echo "--- scripts"; ls scripts 2>/dev/null || true
+          echo "--- size"; du -sh --exclude=.git .
+          echo "--- files over 50MB"; find . -path ./.git -prune -o -type f -size +50M -print
+      - name: Push snapshot to alltginone:macos
+        env:
+          TOKEN: ${{ secrets.SOURCE_TOKEN }}
+          REPLACE: ${{ inputs.replace }}
+        run: |
+          REMOTE="https://x-access-token:${TOKEN}@github.com/chvdbhcx-del/alltginone.git"
+          if git ls-remote --exit-code --heads "$REMOTE" macos >/dev/null 2>&1 && [ "$REPLACE" != "true" ]; then
+            echo "::error::Branch macos already exists (set replace to overwrite)"; exit 1
+          fi
+          cd up
+          git checkout --orphan snapshot
+          git -c user.name="Hivogram CI" -c user.email="ci@users.noreply.github.com" \
+            commit -q -m "Import Telegram for macOS (TelegramSwift) ${SHA}" -m "Upstream: https://github.com/overtake/TelegramSwift/commit/${SHA} (GPLv2)"
+          FORCE=""; [ "$REPLACE" = "true" ] && FORCE=--force
+          git push $FORCE "$REMOTE" HEAD:refs/heads/macos
