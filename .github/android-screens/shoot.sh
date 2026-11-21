@@ -7,7 +7,8 @@ OUT=${OUT:-shots}
 mkdir -p "$OUT"
 adb wait-for-device
 adb install -r -g "$APK" || exit 1
-# clean status bar
+# dark system theme, clean status bar
+adb shell cmd uimode night yes
 adb shell settings put global sysui_demo_allowed 1
 adb shell am broadcast -a com.android.systemui.demo -e command enter
 adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 1200
@@ -26,7 +27,7 @@ adb shell svc data disable
 adb shell cmd connectivity airplane-mode enable || adb shell settings put global airplane_mode_on 1
 
 n=0
-for screen in chats inbox inbox_all accounts broadcasts broadcast_edit chat; do
+for screen in chats inbox inbox_all group calls accounts search broadcasts broadcast_edit templates chat_templates groups lock chat; do
   n=$((n+1))
   adb shell am force-stop $PKG
   adb shell am start -W -n $ACT --ez hivogram_demo true --es hivogram_screen $screen
