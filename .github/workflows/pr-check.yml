@@ -34,17 +34,24 @@ jobs:
         env:
           SRC: chvdbhcx-del/alltginone
           SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+          STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}
           GH_TOKEN: ${{ github.token }}
           ONLY: ${{ inputs.ref }}
         run: |
           set -euo pipefail
           src() { GH_TOKEN="$SOURCE_TOKEN" gh api "$@"; }
           # Open PRs into main from this repo's own branches; if the token may not read PRs, every branch but unigram
-          if prs=$(src "repos/$SRC/pulls?state=open&base=main&per_page=100" \
+          # STATUS_TOKEN (if it has "Pull requests: Read") or SOURCE_TOKEN may list the open PRs
+          pulls() {
+            local r
+            if [ -n "${STATUS_TOKEN:-}" ] && r=$(GH_TOKEN="$STATUS_TOKEN" gh api "$@" 2>/dev/null); then echo "$r"; return 0; fi
+            r=$(GH_TOKEN="$SOURCE_TOKEN" gh api "$@" 2>/dev/null) && echo "$r"
+          }
+          if prs=$(pulls "repos/$SRC/pulls?state=open&base=main&per_page=100" \
                 --jq "[.[] | select(.head.repo.full_name == \"$SRC\") | {ref: .head.ref, sha: .head.sha, pr: .number}]" 2>/dev/null); then
             echo "Open PRs: $(jq length <<<"$prs")"
           else
-            echo "::warning::SOURCE_TOKEN cannot list pull requests: checking branches instead"
+            echo "::warning::No token may list pull requests (give STATUS_TOKEN Pull requests: Read): checking branches instead"
             prs=$(src "repos/$SRC/branches?per_page=100" \
               --jq '[.[] | select(.name != "main" and .name != "unigram" and (.name | startswith("archive/") | not)) | {ref: .name, sha: .commit.sha, pr: 0}]')
           fi
@@ -56,15 +63,18 @@ jobs:
           while read -r item; do
             ref=$(jq -r .ref <<<"$item"); sha=$(jq -r .sha <<<"$item"); pr=$(jq -r .pr <<<"$item")
             if [ -z "$ONLY" ]; then
-              done_n=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=checked-$sha&per_page=1" --jq .total_count)
+              done_n=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=checked-$sha&per_page=1" --jq .total_count 2>/dev/null) || done_n=0
               [ "$done_n" = 0 ] || { echo "$ref ${sha:0:7}: already checked"; continue; }
             fi
             if [ "$ref" = main ]; then
               lite=true; shell=true
             else
               # What the PR changes against main (compare lists at most 300 files: then check everything)
-              files=$(src "repos/$SRC/compare/main...$sha" --jq '[.files[].filename]' 2>/dev/null || echo null)
-              if [ "$files" = null ] || [ "$(jq length <<<"$files")" -ge 300 ]; then
+              # (gh prints the error body on stdout when compare fails, e.g. unrelated history: then check everything)
+              files=$(src "repos/$SRC/compare/main...$sha" --jq '[.files[].filename]' 2>/dev/null) || files=null
+              # a branch (not a PR) with no history shared with main (Unigram's) is not headed for main: skip it
+              if [ "$files" = null ] && [ "$pr" = 0 ]; then echo "$ref ${sha:0:7}: unrelated to main, skipped"; continue; fi
+              if ! jq -e 'type == "array" and length < 300' <<<"$files" > /dev/null 2>&1; then
                 lite=true; shell=true
               else
                 lite=$(jq 'any(.[]; startswith("lite/"))' <<<"$files")
