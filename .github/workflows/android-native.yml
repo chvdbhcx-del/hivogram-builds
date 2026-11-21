@@ -1,4 +1,4 @@
-# Native Android Hivogram: Cherrygram (GPLv2 fork of the official Telegram for Android) + alltginone/android/patches.
+# Native Android Hivogram: the official Telegram for Android (GPLv2) + alltginone/android/patches.
 # Not Tauri: the whole app is Telegram's own Java/C++ client. Built from the private repo with SOURCE_TOKEN,
 # signed with the same permanent key as the other APKs (ANDROID_KEYSTORE_* secrets), Telegram keys built in.
 name: Hivogram Android (native)
@@ -62,14 +62,14 @@ jobs:
           java-version: '21'
           cache: gradle
           cache-dependency-path: |
-            src/android/cherrygram.env
+            src/android/upstream.env
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: 'platform-tools'
       - name: SDK, NDK, CMake
         run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}" "cmake;3.22.1" > /dev/null
-      - name: Cherrygram + Hivogram patches
-        run: android/fetch-cherrygram.sh
+      - name: Telegram + Hivogram patches
+        run: android/fetch-upstream.sh
       - name: Signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -106,7 +106,7 @@ jobs:
           VERSION=$(grep -E '^APP_VERSION_NAME_HIVOGRAM=' android/src/gradle.properties | cut -d= -f2)
           APK=$(find android/src/TMessagesProj_App/build/outputs/apk -name '*universal*.apk' -o -name 'Hivogram-*.apk' | head -n1)
           [ -n "$APK" ] || { find android/src/TMessagesProj_App/build/outputs -name '*.apk'; echo "::error::No APK"; exit 1; }
-          unzip -l "$APK" | grep -q 'lib/arm64-v8a/libtmessages'
+          unzip -l "$APK" | grep -q "lib/arm64-v8a/libtmessages"
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
           "$APKSIGNER" verify --print-certs "$APK" | grep -E 'certificate (DN|SHA-256)' | tee -a "$GITHUB_STEP_SUMMARY" || true
           mkdir -p ../out
@@ -150,6 +150,6 @@ jobs:
           gh release create "$TAG" * \
             --repo "$GITHUB_REPOSITORY" --latest=false \
             --title "Hivogram для Android (нативный) ${VERSION}, сборка ${{ github.run_number }}" \
-            --notes "Нативный Hivogram для Android на базе Cherrygram (Telegram для Android), не Tauri. Ключи Telegram вшиты. Ветка \`${REF}\`.
+            --notes "Нативный Hivogram для Android на базе официального Telegram для Android, не Tauri. Ключи Telegram вшиты. Ветка \`${REF}\`.
 
           - \`Hivogram-${VERSION}-android-native.apk\` — Android 7+. Ставится рядом с прежним Hivogram (другой идентификатор приложения)."
