@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Demo screenshots of native Android Hivogram on an emulator: invented accounts, no login, no network.
+set -x
+PKG=app.hivogram.android
+ACT=$PKG/org.telegram.ui.LaunchActivity
+OUT=${OUT:-shots}
+mkdir -p "$OUT"
+adb wait-for-device
+adb install -r -g "$APK" || exit 1
+# clean status bar
+adb shell settings put global sysui_demo_allowed 1
+adb shell am broadcast -a com.android.systemui.demo -e command enter
+adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 1200
+adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4
+adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+# first start creates the app's files folder, then the Russian language file goes there
+adb shell am start -W -n $ACT
+sleep 10
+adb shell am force-stop $PKG
+adb shell mkdir -p /sdcard/Android/data/$PKG/files
+[ -s ru.xml ] && adb push ru.xml /sdcard/Android/data/$PKG/files/ru.xml
+# offline: demo accounts must never reach Telegram
+adb shell svc wifi disable
+adb shell svc data disable
+adb shell cmd connectivity airplane-mode enable || adb shell settings put global airplane_mode_on 1
+
+n=0
+for screen in chats inbox inbox_all accounts broadcasts broadcast_edit chat; do
+  n=$((n+1))
+  adb shell am force-stop $PKG
+  adb shell am start -W -n $ACT --ez hivogram_demo true --es hivogram_screen $screen
+  [ $n = 1 ] && sleep 12
+  sleep 9
+  adb exec-out screencap -p > "$OUT/$(printf %02d $n)-$screen.png"
+done
+adb logcat -d > "$OUT/logcat.txt" 2>&1 || true
+ls -l "$OUT"
