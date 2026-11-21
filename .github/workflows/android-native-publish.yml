@@ -1,0 +1,52 @@
+# Publishes an already built and checked native Android APK (artifact of an android-native run) as a release.
+# TEMPORARY push trigger on this work branch (workflow_dispatch needs the file on main). Remove before merging PR 26.
+name: Hivogram Android (native) publish
+
+on:
+  push:
+    branches: [claude/project-thread-1ryc93]
+    paths: [.android-publish]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Which run
+        run: |
+          RUN_ID=$(grep -E '^run_id=' .android-publish | cut -d= -f2)
+          [ -n "$RUN_ID" ] || { echo "::error::.android-publish has no run_id"; exit 1; }
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          echo "RUN_NUMBER=$(gh api repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID --jq .run_number)" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: android-native
+          path: out
+          run-id: ${{ env.RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          cd out && sha256sum * > SHA256SUMS.txt && ls -l && cat SHA256SUMS.txt
+          VERSION=$(ls Hivogram-*.apk | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
+          TAG="android-v${VERSION}-build.${RUN_NUMBER}"
+          ../.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG" || echo "::warning::sums not signed"
+          gh release create "$TAG" * \
+            --repo "$GITHUB_REPOSITORY" --latest=false --target "$GITHUB_SHA" \
+            --title "Hivogram для Android (нативный) ${VERSION}, сборка ${RUN_NUMBER}" \
+            --notes "Нативный Hivogram для Android на базе Cherrygram (форк Telegram для Android), не Tauri. Ключи Telegram вшиты, APK подписан постоянным ключом.
+
+          - \`Hivogram-${VERSION}-android-native.apk\`: Android 7+. Ставится рядом с прежним Hivogram APK (другой идентификатор приложения).
+
+          Внутри: вкладки «Входящие», «Звонки» и «Аккаунты» по всем аккаунтам, до 60 аккаунтов, сон аккаунтов, рассылки (каждый день, без «переслано от»), статусы диалогов, шаблоны ответов через «/», группы аккаунтов, поиск по всем аккаунтам, блокировка паролем и скрытые аккаунты."
+          echo "URL: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" | tee -a "$GITHUB_STEP_SUMMARY"
