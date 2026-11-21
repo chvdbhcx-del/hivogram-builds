@@ -1,7 +1,7 @@
 # One-off: import the Telegram for macOS source (github.com/TelegramMessenger/telegram-macos, GPLv2;
 # formerly overtake/TelegramSwift) as a snapshot into
 # branch `macos` of the private repo chvdbhcx-del/alltginone, the same way branch `unigram` holds the Unigram fork.
-# Submodules stay links to their upstream repos. Refuses to touch an existing `macos` branch unless `replace` is set.
+# Submodules stay links to their upstream repos. Output: a git bundle artifact.
 name: macOS import
 
 on:
@@ -10,10 +10,6 @@ on:
       upstream_ref:
         description: telegram-macos branch or commit
         default: master
-      replace:
-        description: Overwrite an existing macos branch
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -40,18 +36,17 @@ jobs:
           echo "--- scripts"; ls scripts 2>/dev/null || true
           echo "--- size"; du -sh --exclude=.git .
           echo "--- files over 50MB"; find . -path ./.git -prune -o -type f -size +50M -print
-      - name: Push snapshot to alltginone:macos
-        env:
-          TOKEN: ${{ secrets.SOURCE_TOKEN }}
-          REPLACE: ${{ inputs.replace }}
+      - name: Snapshot as a git bundle (SOURCE_TOKEN is read-only; the bundle is pushed to alltginone:macos from outside)
         run: |
-          REMOTE="https://x-access-token:${TOKEN}@github.com/chvdbhcx-del/alltginone.git"
-          if git ls-remote --exit-code --heads "$REMOTE" macos >/dev/null 2>&1 && [ "$REPLACE" != "true" ]; then
-            echo "::error::Branch macos already exists (set replace to overwrite)"; exit 1
-          fi
           cd up
-          git checkout --orphan snapshot
+          git checkout -q --orphan snapshot
           git -c user.name="Hivogram CI" -c user.email="ci@users.noreply.github.com" \
             commit -q -m "Import Telegram for macOS (telegram-macos) ${SHA}" -m "Upstream: https://github.com/TelegramMessenger/telegram-macos/commit/${SHA} (GPLv2)"
-          FORCE=""; [ "$REPLACE" = "true" ] && FORCE=--force
-          git push $FORCE "$REMOTE" HEAD:refs/heads/macos
+          git bundle create ../macos.bundle snapshot
+          ls -l ../macos.bundle
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-bundle
+          path: macos.bundle
+          retention-days: 2
+          compression-level: 0
