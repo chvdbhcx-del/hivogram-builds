@@ -1,0 +1,102 @@
+# Checks of alltginone's open pull requests (its own Actions cannot run): every 20 minutes, each new head commit of a
+# PR into main (and main itself) goes through check.yml once. Only what the PR touches is checked: Lite for lite/,
+# the shell and the host page for the rest. The result is posted to the PR as the commit status
+# «hivogram-builds / check» when the secret STATUS_TOKEN is set (fine-grained token on alltginone with
+# "Commit statuses: Read and write"); without it the result is only in this repo's Actions.
+# A checked-<sha> artifact marks a commit as done (kept 30 days). «Run workflow» with a branch re-checks it.
+name: PR check
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch of alltginone to (re)check now; empty = every open PR not yet checked
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pr-check
+  cancel-in-progress: false
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
+    steps:
+      - id: list
+        env:
+          SRC: chvdbhcx-del/alltginone
+          SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          ONLY: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          src() { GH_TOKEN="$SOURCE_TOKEN" gh api "$@"; }
+          # Open PRs into main from this repo's own branches; if the token may not read PRs, every branch but unigram
+          if prs=$(src "repos/$SRC/pulls?state=open&base=main&per_page=100" \
+                --jq "[.[] | select(.head.repo.full_name == \"$SRC\") | {ref: .head.ref, sha: .head.sha, pr: .number}]" 2>/dev/null); then
+            echo "Open PRs: $(jq length <<<"$prs")"
+          else
+            echo "::warning::SOURCE_TOKEN cannot list pull requests: checking branches instead"
+            prs=$(src "repos/$SRC/branches?per_page=100" \
+              --jq '[.[] | select(.name != "main" and .name != "unigram" and (.name | startswith("archive/") | not)) | {ref: .name, sha: .commit.sha, pr: 0}]')
+          fi
+          main=$(src "repos/$SRC/branches/main" --jq '{ref: .name, sha: .commit.sha, pr: 0}')
+          all=$(jq -c --argjson main "$main" '[$main] + .' <<<"$prs")
+          if [ -n "$ONLY" ]; then all=$(jq -c --arg r "$ONLY" '[.[] | select(.ref == $r)]' <<<"$all"); fi
+
+          out='[]'
+          while read -r item; do
+            ref=$(jq -r .ref <<<"$item"); sha=$(jq -r .sha <<<"$item"); pr=$(jq -r .pr <<<"$item")
+            if [ -z "$ONLY" ]; then
+              done_n=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=checked-$sha&per_page=1" --jq .total_count)
+              [ "$done_n" = 0 ] || { echo "$ref ${sha:0:7}: already checked"; continue; }
+            fi
+            if [ "$ref" = main ]; then
+              lite=true; shell=true
+            else
+              # What the PR changes against main (compare lists at most 300 files: then check everything)
+              files=$(src "repos/$SRC/compare/main...$sha" --jq '[.files[].filename]' 2>/dev/null || echo null)
+              if [ "$files" = null ] || [ "$(jq length <<<"$files")" -ge 300 ]; then
+                lite=true; shell=true
+              else
+                lite=$(jq 'any(.[]; startswith("lite/"))' <<<"$files")
+                shell=$(jq 'any(.[]; startswith("lite/") | not)' <<<"$files")
+              fi
+              [ "$lite" = true ] || [ "$shell" = true ] || { echo "$ref ${sha:0:7}: no changes against main"; continue; }
+            fi
+            title="Check $ref"; [ "$pr" = 0 ] || title="Check PR $pr ($ref)"
+            echo "$title ${sha:0:7}: shell=$shell lite=$lite"
+            out=$(jq -c --arg ref "$ref" --arg sha "$sha" --arg title "$title" --argjson lite "$lite" --argjson shell "$shell" \
+              '. + [{ref: $ref, sha: $sha, title: $title, lite: $lite, shell: $shell}]' <<<"$out")
+          done < <(jq -c '.[]' <<<"$all")
+          # at most 6 commits a run; the rest wait for the next one
+          out=$(jq -c '.[:6]' <<<"$out")
+          echo "matrix=$out" >> "$GITHUB_OUTPUT"
+          echo "To check: $(jq length <<<"$out")"
+
+  check:
+    needs: list
+    if: needs.list.outputs.matrix != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include: ${{ fromJSON(needs.list.outputs.matrix) }}
+    uses: ./.github/workflows/check.yml
+    with:
+      ref: ${{ matrix.sha }}
+      lite: ${{ matrix.lite }}
+      shell: ${{ matrix.shell }}
+      status_sha: ${{ matrix.sha }}
+      title: ${{ matrix.title }}
+    secrets:
+      SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+      STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}

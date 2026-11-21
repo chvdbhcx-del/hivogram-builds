@@ -47,8 +47,63 @@ jobs:
     secrets:
       SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
 
-  windows:
+  # Web A + host → dist/ ONCE for the exe and the APK (they embed the same files); the web app (pages) builds its own
+  # variant with HIVOGRAM_WEB=1 (browser push), so it is not shared.
+  web:
     needs: check
+    if: contains(inputs.targets, 'windows') || contains(inputs.targets, 'android')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          persist-credentials: false
+      - name: Keys present?
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: '[ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            src/package-lock.json
+            src/host/package-lock.json
+      - name: Versions match?
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # every file that carries the version must carry the same one (refs before the check have no script)
+          if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
+      - run: npm ci --no-audit --no-fund
+      - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
+      - run: npm run fetch:weba
+      - name: npm run build:web (Web A + host → dist/, keys built in)
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: npm run build:web
+      # ~11 000 small files: one tarball uploads and downloads much faster than an artifact of loose files
+      - name: Pack dist/
+        run: tar -C dist -czf ../dist.tgz . && ls -l ../dist.tgz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist
+          path: dist.tgz
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+  windows:
+    needs: [check, web]
     if: contains(inputs.targets, 'windows')
     runs-on: windows-latest
     timeout-minutes: 90
@@ -91,16 +146,22 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
         run: |
-          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          # every file that carries the version must carry the same one (refs before the check have no script)
           if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
-      - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
-      - run: npm run fetch:weba
-      - name: tauri build (beforeBuildCommand = npm run build:web)
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: src
+      - name: dist/ from the web job
+        shell: bash
+        run: mkdir -p dist && tar -C dist -xzf dist.tgz && rm dist.tgz && ls dist | head
+      - name: tauri build (dist/ is ready, so no beforeBuildCommand)
+        shell: bash
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        run: npx tauri build --ci --bundles nsis
+        run: npx tauri build --ci --bundles nsis --config '{"build":{"beforeBuildCommand":null}}'
       - name: Collect
         shell: bash
         run: |
@@ -117,7 +178,7 @@ jobs:
           if-no-files-found: error
 
   android:
-    needs: check
+    needs: [check, web]
     if: contains(inputs.targets, 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -177,11 +238,15 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
         run: |
-          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          # every file that carries the version must carry the same one (refs before the check have no script)
           if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
-      - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
-      - run: npm run fetch:weba
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: src
+      - name: dist/ from the web job
+        run: mkdir -p dist && tar -C dist -xzf dist.tgz && rm dist.tgz && ls dist | head
       - name: Signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -203,17 +268,18 @@ jobs:
             echo "keyAlias=${KEY_ALIAS:-androiddebugkey}"
             echo "keyPassword=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
           } > keystore.properties
-      - name: tauri android build (beforeBuildCommand = npm run build:web)
+      - name: tauri android build (dist/ is ready, so no beforeBuildCommand)
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        run: npx tauri android build --ci --apk --target aarch64 armv7
+        run: npx tauri android build --ci --apk --target aarch64 armv7 --config '{"build":{"beforeBuildCommand":null}}'
       - name: Collect
         run: |
           VERSION=$(node -p "require('./package.json').version")
           APK=$(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | head -n1)
-          unzip -l "$APK" | grep -q 'lib/arm64-v8a/liborbit_lib.so'
-          unzip -l "$APK" | grep -q 'lib/armeabi-v7a/liborbit_lib.so'
+          # the shell's native library (lib<crate>_lib.so) for both ABIs
+          unzip -l "$APK" | grep -qE 'lib/arm64-v8a/lib[a-z0-9_]+_lib\.so'
+          unzip -l "$APK" | grep -qE 'lib/armeabi-v7a/lib[a-z0-9_]+_lib\.so'
           # Signing certificate (public): must stay the same across releases, or updates won't install
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
           if [ -x "$APKSIGNER" ]; then "$APKSIGNER" verify --print-certs "$APK" | grep -E 'certificate (DN|SHA-256)' | tee -a "$GITHUB_STEP_SUMMARY" || true; else echo "::warning::apksigner not found, signer not printed"; fi
@@ -306,7 +372,7 @@ jobs:
         env:
           REF: ${{ inputs.ref }}
         run: |
-          # package.json, host/package.json, tauri.conf.json and Cargo.toml must carry one version (refs before the check have no script)
+          # every file that carries the version must carry the same one (refs before the check have no script)
           if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
       - run: npm ci --no-audit --no-fund
       - run: git config --global url.https://github.com/.insteadOf ssh://git@github.com/
