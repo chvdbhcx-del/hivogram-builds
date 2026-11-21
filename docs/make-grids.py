@@ -3,7 +3,9 @@
 lands at exactly the same pixel size, captions baked in, so GitHub can't
 stretch columns by caption length.
 
-    python3 docs/make-grids.py /path/to/Nunito-SemiBold.ttf
+    python3 docs/make-grids.py /path/to/Nunito-SemiBold.ttf [grid-name ...]
+
+A variable Nunito works too (SemiBold is picked). Grid names limit the run.
 """
 import os
 import sys
@@ -44,6 +46,14 @@ GRIDS = {
         ('desktop-status-menu', 'Статус и метки чата'),
         ('desktop-status-editor', 'Редактор статусов'),
     ]),
+    'grid-desktop-unigram': ('desk', 2, [
+        ('unigram/1-list', 'Список по важности, группы'),
+        ('unigram/2-status-menu', 'Статус и метки чата'),
+        ('unigram/3-sort', 'Сортировка и вид'),
+        ('unigram/4-editor', 'Редактор статусов'),
+        ('unigram/5-words', 'Вид «Со словом»'),
+        ('unigram/6-profile', 'Звонки из профиля'),
+    ]),
     'grid-phone-status': ('phone', 4, [
         ('iphone-status-list', 'Список'),
         ('iphone-status-sort', 'Сортировка'),
@@ -65,6 +75,10 @@ def build(name, kind, cols, items):
     tw, th = PHONE if kind == 'phone' else DESK
     fsize = 44 if kind == 'phone' else 52
     font = ImageFont.truetype(FONT, fsize)
+    try:
+        font.set_variation_by_name('SemiBold')
+    except (OSError, ValueError):
+        pass  # a static SemiBold file
     pill_h = int(fsize * 1.9)
     cell_h = th + 20 + pill_h
     rows = (len(items) + cols - 1) // cols
@@ -93,5 +107,7 @@ def build(name, kind, cols, items):
     print(name, canvas.size, os.path.getsize(out) // 1024, 'KB')
 
 
+ONLY = set(sys.argv[2:])
 for n, (k, c, it) in GRIDS.items():
-    build(n, k, c, it)
+    if not ONLY or n in ONLY:
+        build(n, k, c, it)
