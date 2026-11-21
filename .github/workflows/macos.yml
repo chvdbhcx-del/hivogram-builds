@@ -76,6 +76,16 @@ jobs:
             src/core-xprojects/*/build
             src/packages/WalletEngine/wallet_engineFFI.xcframework
           key: ${{ steps.fwcache.outputs.cache-primary-key }}
+      - name: Bake API keys
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          [ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }
+          F=packages/ApiCredentials/Sources/ApiCredentials/Config.swift
+          grep -q 'HIVOGRAM_API_ID' "$F" || { echo "::error::$F has no HIVOGRAM_API_ID placeholder"; exit 1; }
+          sed -i '' -E "s|return 0 // HIVOGRAM_API_ID|return ${TELEGRAM_API_ID}|; s|return \"\" // HIVOGRAM_API_HASH|return \"${TELEGRAM_API_HASH}\"|" "$F"
+          grep -q 'HIVOGRAM_API' "$F" && { echo "::error::keys not substituted"; exit 1; } || echo "keys baked in"
       - name: Archive (unsigned)
         run: |
           cp configurations/Stable.xcconfig Telegram-Mac/Release.xcconfig 2>/dev/null || true
@@ -93,8 +103,8 @@ jobs:
         run: |
           cd ..
           APP=$(ls -d Hivogram.xcarchive/Products/Applications/*.app | head -n1)
-          mkdir -p dmg && cp -R "$APP" dmg/
-          APP="dmg/$(basename "$APP")"
+          mkdir -p dmg && cp -R "$APP" dmg/Hivogram.app
+          APP="dmg/Hivogram.app"
           cat > ent.plist <<'PL'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
