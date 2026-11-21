@@ -31,9 +31,20 @@ on:
         description: Also check the Tauri shell and the host page
         type: boolean
         default: true
+      status_sha:
+        description: (PR check) commit of alltginone to report on; also leaves a checked-<sha> artifact
+        type: string
+        default: ''
+      title:
+        description: Job name
+        type: string
+        default: ''
     secrets:
       SOURCE_TOKEN:
         required: true
+      STATUS_TOKEN:
+        description: Optional token with "Commit statuses - write" on alltginone; without it no status is posted
+        required: false
 
 permissions:
   contents: read
@@ -45,13 +56,25 @@ env:
 
 jobs:
   check:
-    name: Check (fmt, clippy, tests, host, Lite)
+    name: ${{ inputs.title || 'Check (fmt, clippy, tests, host, Lite)' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      STATUS_SHA: ${{ inputs.status_sha }}
+      STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}
     defaults:
       run:
         working-directory: src
     steps:
+      - name: Status on alltginone (pending)
+        if: inputs.status_sha != ''
+        working-directory: .
+        run: |
+          [ -n "$STATUS_TOKEN" ] || { echo "No STATUS_TOKEN: result only in this run"; exit 0; }
+          GH_TOKEN="$STATUS_TOKEN" gh api -X POST "repos/chvdbhcx-del/alltginone/statuses/$STATUS_SHA" \
+            -f state=pending -f context='hivogram-builds / check' -f description='Check is running' \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > /dev/null \
+            || echo "::warning::Could not post the status (STATUS_TOKEN needs Commit statuses: write on alltginone)"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: chvdbhcx-del/alltginone
@@ -106,10 +129,10 @@ jobs:
           [ -f dist/index.html ] || echo '<!doctype html><title>stub</title>' > dist/index.html
       - name: cargo clippy (shell)
         if: inputs.shell
-        run: cargo clippy -p orbit --all-targets -- -D warnings
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
       - name: cargo test (shell)
         if: inputs.shell
-        run: cargo test -p orbit
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: cargo test (Lite core)
         if: inputs.lite
@@ -121,3 +144,24 @@ jobs:
         run: |
           [ -f lite/Cargo.toml ] || exit 0
           cd lite && cargo clippy --locked -p hivogram-core --all-targets
+
+      # PR check only: the result for alltginone, and a checked-<sha> marker so the same commit is not checked twice
+      - name: Status on alltginone (result)
+        if: always() && inputs.status_sha != ''
+        working-directory: .
+        env:
+          RESULT: ${{ job.status }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/mark" && echo "$RESULT" > "$RUNNER_TEMP/mark/result.txt"
+          [ -n "$STATUS_TOKEN" ] || exit 0
+          case "$RESULT" in success) STATE=success; DESC='fmt, clippy, tests, host build: OK';; cancelled) STATE=error; DESC='Check was cancelled';; *) STATE=failure; DESC='Check failed: open the run';; esac
+          GH_TOKEN="$STATUS_TOKEN" gh api -X POST "repos/chvdbhcx-del/alltginone/statuses/$STATUS_SHA" \
+            -f state="$STATE" -f context='hivogram-builds / check' -f description="$DESC" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > /dev/null \
+            || echo "::warning::Could not post the status"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && inputs.status_sha != ''
+        with:
+          name: checked-${{ inputs.status_sha }}
+          path: ${{ runner.temp }}/mark/result.txt
+          retention-days: 30
