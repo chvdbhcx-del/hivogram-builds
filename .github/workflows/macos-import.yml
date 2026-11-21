@@ -1,4 +1,5 @@
-# One-off: import the Telegram for macOS source (github.com/overtake/TelegramSwift, GPLv2) as a snapshot into
+# One-off: import the Telegram for macOS source (github.com/TelegramMessenger/telegram-macos, GPLv2;
+# formerly overtake/TelegramSwift) as a snapshot into
 # branch `macos` of the private repo chvdbhcx-del/alltginone, the same way branch `unigram` holds the Unigram fork.
 # Submodules stay links to their upstream repos. Refuses to touch an existing `macos` branch unless `replace` is set.
 name: macOS import
@@ -7,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       upstream_ref:
-        description: TelegramSwift branch or commit
+        description: telegram-macos branch or commit
         default: master
       replace:
         description: Overwrite an existing macos branch
@@ -26,7 +27,8 @@ jobs:
         env:
           REF: ${{ inputs.upstream_ref }}
         run: |
-          git clone --filter=blob:none --no-checkout https://github.com/overtake/TelegramSwift up
+          export GIT_TERMINAL_PROMPT=0
+          git clone --filter=blob:none --no-checkout https://github.com/TelegramMessenger/telegram-macos up
           cd up
           git checkout -q "$REF"
           echo "SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
@@ -50,6 +52,6 @@ jobs:
           cd up
           git checkout --orphan snapshot
           git -c user.name="Hivogram CI" -c user.email="ci@users.noreply.github.com" \
-            commit -q -m "Import Telegram for macOS (TelegramSwift) ${SHA}" -m "Upstream: https://github.com/overtake/TelegramSwift/commit/${SHA} (GPLv2)"
+            commit -q -m "Import Telegram for macOS (telegram-macos) ${SHA}" -m "Upstream: https://github.com/TelegramMessenger/telegram-macos/commit/${SHA} (GPLv2)"
           FORCE=""; [ "$REPLACE" = "true" ] && FORCE=--force
           git push $FORCE "$REMOTE" HEAD:refs/heads/macos
