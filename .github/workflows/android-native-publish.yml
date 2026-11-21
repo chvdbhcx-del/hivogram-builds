@@ -38,15 +38,15 @@ jobs:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           cd out && sha256sum * > SHA256SUMS.txt && ls -l && cat SHA256SUMS.txt
-          VERSION=$(ls Hivogram-*.apk | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
+          VERSION=$(ls hivogram_native-*.apk | head -n1 | sed -E 's/^hivogram_native-([0-9.]+)-.*/\1/')
           TAG="android-v${VERSION}-build.${RUN_NUMBER}"
           ../.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG" || echo "::warning::sums not signed"
           gh release create "$TAG" * \
             --repo "$GITHUB_REPOSITORY" --latest=false --target "$GITHUB_SHA" \
             --title "Hivogram для Android (нативный) ${VERSION}, сборка ${RUN_NUMBER}" \
-            --notes "Нативный Hivogram для Android на базе Cherrygram (форк Telegram для Android), не Tauri. Ключи Telegram вшиты, APK подписан постоянным ключом.
+            --notes "Нативный Hivogram для Android (форк Telegram для Android), не Tauri. Ключи Telegram вшиты, APK подписан постоянным ключом.
 
-          - \`Hivogram-${VERSION}-android-native.apk\`: Android 7+. Ставится рядом с прежним Hivogram APK (другой идентификатор приложения).
+          - \`hivogram_native-${VERSION}-build.N.apk\`: Android 7+. Ставится рядом с прежним Hivogram APK (другой идентификатор приложения).
 
-          Внутри: вкладки «Входящие», «Звонки» и «Аккаунты» по всем аккаунтам, до 60 аккаунтов, сон аккаунтов, рассылки (каждый день, без «переслано от»), статусы диалогов, шаблоны ответов через «/», группы аккаунтов, поиск по всем аккаунтам, блокировка паролем и скрытые аккаунты."
+          Внутри: вкладка «Чаты» со всеми аккаунтами сразу, «Аккаунт» (папки и архив одного аккаунта), «Звонки» по всем аккаунтам (можно выключить), раздел Hivogram в настройках, облачные обновления из этих релизов, до 60 аккаунтов, сон аккаунтов, рассылки (каждый день, без «переслано от»), статусы диалогов, шаблоны ответов через «/», группы аккаунтов, поиск по всем аккаунтам, блокировка паролем и скрытые аккаунты."
           echo "URL: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" | tee -a "$GITHUB_STEP_SUMMARY"
