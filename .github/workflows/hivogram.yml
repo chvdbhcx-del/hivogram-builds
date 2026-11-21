@@ -317,7 +317,8 @@ jobs:
           REF: ${{ inputs.ref }}
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
-          cd out && sha256sum * > SHA256SUMS.txt && ls -l
+          # web-dist (the shared Web A build for windows/android) is downloaded too: it is not a release file
+          cd out && rm -f dist.tgz && sha256sum * > SHA256SUMS.txt && ls -l
           VERSION=$(ls Hivogram-*.* | head -n1 | sed -E 's/^Hivogram-([0-9.]+)-.*/\1/')
           TAG="hivogram-v${VERSION}-build.${{ github.run_number }}"
           ../builds/.github/scripts/sign-sums.sh SHA256SUMS.txt "$TAG"
