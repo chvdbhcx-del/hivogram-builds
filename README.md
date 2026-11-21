@@ -16,8 +16,8 @@
 <!-- downloads:start -->
 | | Что | Файл | Версия | Дата |
 |---|---|---|---|---|
-| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.1-build.39-setup.exe) | 0.2.1, сборка 39 | 21.11.2026 |
-| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.1-build.39.apk) | 0.2.1, сборка 39 | 21.11.2026 |
+| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.1-build.40-setup.exe) | 0.2.1, сборка 40 | 21.11.2026 |
+| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.1-build.40.apk) | 0.2.1, сборка 40 | 21.11.2026 |
 | **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
 | **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.5-build.5-setup.exe) | 13.2.5, сборка 5 | 21.11.2026 |
 | **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.24-setup.exe) | 0.3.0, сборка 24 | 21.11.2026 |
