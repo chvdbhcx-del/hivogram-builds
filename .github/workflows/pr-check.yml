@@ -72,6 +72,8 @@ jobs:
               # What the PR changes against main (compare lists at most 300 files: then check everything)
               # (gh prints the error body on stdout when compare fails, e.g. unrelated history: then check everything)
               files=$(src "repos/$SRC/compare/main...$sha" --jq '[.files[].filename]' 2>/dev/null) || files=null
+              # a branch (not a PR) with no history shared with main (Unigram's) is not headed for main: skip it
+              if [ "$files" = null ] && [ "$pr" = 0 ]; then echo "$ref ${sha:0:7}: unrelated to main, skipped"; continue; fi
               if ! jq -e 'type == "array" and length < 300' <<<"$files" > /dev/null 2>&1; then
                 lite=true; shell=true
               else
