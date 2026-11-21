@@ -51,4 +51,5 @@ jobs:
           git checkout --orphan snapshot
           git -c user.name="Hivogram CI" -c user.email="ci@users.noreply.github.com" \
             commit -q -m "Import Telegram for macOS (TelegramSwift) ${SHA}" -m "Upstream: https://github.com/overtake/TelegramSwift/commit/${SHA} (GPLv2)"
-          git push "$REMOTE" HEAD:refs/heads/macos ${REPLACE:+--force}
+          FORCE=""; [ "$REPLACE" = "true" ] && FORCE=--force
+          git push $FORCE "$REMOTE" HEAD:refs/heads/macos
