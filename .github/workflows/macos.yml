@@ -1,0 +1,143 @@
+# Hivogram for macOS (fork of the official Telegram for macOS, branch `macos` of the private repo
+# chvdbhcx-del/alltginone): universal .dmg, ad-hoc signed (no Apple Developer account yet).
+# Native libraries (ffmpeg, webrtc, ...) take 1-2 h on the first run and are cached by submodule commits.
+name: Hivogram macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch of alltginone to build
+        default: macos
+      smoke:
+        description: Launch the built app on the runner and take screenshots
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 340
+    defaults:
+      run:
+        working-directory: src
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: chvdbhcx-del/alltginone
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          sw_vers; xcodebuild -version; ls -d /Applications/Xcode*.app
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://gitlab.com/".insteadOf "git@gitlab.com:"
+          brew install cmake ninja meson nasm yasm openssl@1.1 zlib autoconf libtool automake pkg-config || brew install cmake ninja meson nasm yasm zlib autoconf libtool automake pkg-config
+          command -v rustup >/dev/null || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive --jobs 8
+          du -sh submodules third-party
+          echo "SUBS=$(git submodule status --recursive | shasum | cut -c1-16)" >> "$GITHUB_ENV"
+      - name: Restore native libraries
+        id: fwcache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            src/core-xprojects/*/build
+            src/packages/WalletEngine/wallet_engineFFI.xcframework
+          key: mac-fw-${{ env.SUBS }}-${{ hashFiles('src/core-xprojects/**/*.sh', 'src/scripts/configure_frameworks.sh', 'src/scripts/telegram-ios-macos.patch') }}
+          restore-keys: mac-fw-${{ env.SUBS }}-
+      - name: Native libraries (configure_frameworks.sh)
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: '3.5'
+        run: |
+          sh scripts/setup_build_env.sh || echo "::warning::setup_build_env.sh failed, continuing"
+          mkdir -p ../logs
+          if ! sh scripts/configure_frameworks.sh > ../logs/frameworks.log 2>&1; then tail -150 ../logs/frameworks.log; exit 1; fi
+          grep -E '^(framework-stamp:|build-timing:)' ../logs/frameworks.log || true
+      - name: Save native libraries (right away, so a failed app build keeps them)
+        if: steps.fwcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            src/core-xprojects/*/build
+            src/packages/WalletEngine/wallet_engineFFI.xcframework
+          key: ${{ steps.fwcache.outputs.cache-primary-key }}
+      - name: Archive (unsigned)
+        run: |
+          cp configurations/Stable.xcconfig Telegram-Mac/Release.xcconfig 2>/dev/null || true
+          if ! xcodebuild archive -showBuildTimingSummary -workspace Telegram-Mac.xcworkspace -scheme Release \
+              -configuration Release -archivePath ../Hivogram.xcarchive COMPILER_INDEX_STORE_ENABLE=NO \
+              'SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) STABLE' \
+              'SFEED_URL=https://hivogram.invalid/versions.xml' \
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM= \
+              > ../logs/xcodebuild.log 2>&1; then
+            grep -E -A3 '(^|: )(fatal )?error: |^ld: [^w]|^Undefined symbols' ../logs/xcodebuild.log | head -300 || true
+            tail -40 ../logs/xcodebuild.log; exit 1
+          fi
+          sed -n '/^Build Timing Summary/,$p' ../logs/xcodebuild.log | tail -30
+      - name: Ad-hoc sign and .dmg
+        run: |
+          cd ..
+          APP=$(ls -d Hivogram.xcarchive/Products/Applications/*.app | head -n1)
+          mkdir -p dmg && cp -R "$APP" dmg/
+          APP="dmg/$(basename "$APP")"
+          cat > ent.plist <<'PL'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>com.apple.security.device.audio-input</key><true/>
+            <key>com.apple.security.device.camera</key><true/>
+            <key>com.apple.security.cs.disable-library-validation</key><true/>
+          </dict></plist>
+          PL
+          sed -i '' 's/^          //' ent.plist
+          find "$APP/Contents" \( -name "*.dylib" -o -name "*.framework" -o -name "*.appex" -o -name "*.xpc" -o -name "*.app" \) -prune -print0 | \
+            xargs -0 -I{} codesign --force --sign - --timestamp=none "{}" || true
+          codesign --force --sign - --timestamp=none --entitlements ent.plist "$APP"
+          codesign --verify --deep --strict "$APP" && echo "signature ok"
+          ln -s /Applications dmg/Applications
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p out
+          hdiutil create -volname Hivogram -srcfolder dmg -ov -format UDZO "out/Hivogram-${VERSION}-macos-universal.dmg"
+          ls -l out; lipo -info "$APP/Contents/MacOS/"* || true
+      - name: Smoke test (launch and screenshot)
+        if: inputs.smoke
+        run: |
+          cd ..
+          APP=$(ls -d dmg/*.app | head -n1)
+          mkdir -p shots
+          ( "$APP/Contents/MacOS/$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$APP/Contents/Info.plist")" > logs/app.log 2>&1 & echo $! > app.pid )
+          for i in 1 2 3; do sleep 15; screencapture -x "shots/launch-$i.png" || true; done
+          kill "$(cat app.pid)" 2>/dev/null && echo "still running after 45 s" || echo "::warning::app exited early"
+          tail -60 logs/app.log || true
+          ls ~/Library/Logs/DiagnosticReports/ 2>/dev/null | head && cp ~/Library/Logs/DiagnosticReports/* logs/ 2>/dev/null || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos
+          path: out/*
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: macos-logs
+          path: |
+            logs/
+            shots/
+          retention-days: 7
