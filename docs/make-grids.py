@@ -54,6 +54,14 @@ GRIDS = {
         ('unigram/5-words', 'Вид «Со словом»'),
         ('unigram/6-profile', 'Звонки из профиля'),
     ]),
+    'grid-desktop-lite': ('desk', 2, [
+        ('lite/lite-allchats', '«Все чаты» по всем аккаунтам'),
+        ('lite/lite-status-menu', 'Статус и метки чата'),
+        ('lite/lite-calls', '«Звонки» всех аккаунтов'),
+        ('lite/lite-broadcasts', 'Рассылки'),
+        ('lite/lite-chat-poll', 'Опрос, стикер, эмодзи'),
+        ('lite/lite-group-call', 'Голосовой чат'),
+    ]),
     'grid-phone-status': ('phone', 4, [
         ('iphone-status-list', 'Список'),
         ('iphone-status-sort', 'Сортировка'),
