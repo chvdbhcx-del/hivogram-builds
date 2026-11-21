@@ -33,25 +33,9 @@
 
 <p align="center"><img src="docs/screens/desktop-allchats.png" width="100%" alt="Hivogram на Windows: все чаты всех аккаунтов в одном списке"></p>
 
-<table>
-<tr>
-<td width="50%" align="center" valign="top"><b>«Входящие»</b><br><img src="docs/screens/desktop-inbox.png" width="100%" alt="«Входящие»"></td>
-<td width="50%" align="center" valign="top"><b>Рассылки</b><br><img src="docs/screens/desktop-broadcasts.png" width="100%" alt="Рассылки"></td>
-</tr>
-<tr>
-<td width="50%" align="center" valign="top"><b>Звонок на другой аккаунт</b><br><img src="docs/screens/desktop-call.png" width="100%" alt="Звонок на другой аккаунт"></td>
-<td width="50%" align="center" valign="top"><b>Настройки</b><br><img src="docs/screens/desktop-settings.png" width="100%" alt="Настройки"></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screens/grid-desktop-main.png" width="100%" alt="ПК: «Входящие», рассылки, звонок на другой аккаунт, настройки"></p>
 
-<table>
-<tr>
-<td width="25%" align="center" valign="top"><b>Android, чаты</b><br><img src="docs/screens/android-chats.png" width="100%" alt="Android, чаты"></td>
-<td width="25%" align="center" valign="top"><b>Android, «Входящие»</b><br><img src="docs/screens/android-inbox.png" width="100%" alt="Android, «Входящие»"></td>
-<td width="25%" align="center" valign="top"><b>iPhone, все чаты</b><br><img src="docs/screens/iphone-allchats.png" width="100%" alt="iPhone, все чаты"></td>
-<td width="25%" align="center" valign="top"><b>iPhone, чат</b><br><img src="docs/screens/iphone-chat.png" width="100%" alt="iPhone, чат"></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screens/grid-phone-main.png" width="100%" alt="Телефон: Android чаты и «Входящие», iPhone все чаты и чат"></p>
 
 <sub>Скриншоты в демо-режиме, аккаунты и чаты выдуманные. ПК: окно 1440×900. Телефон: экран 390×844.</sub>
 
@@ -113,14 +97,7 @@
 - **Один разговор за раз.** Приняли звонок на другом аккаунте — текущий завершается сам, как в Telegram.
 - **Аккаунт со звонком не засыпает,** а экран телефона не гаснет, пока идёт разговор.
 
-<table>
-<tr>
-<td width="25%" align="center" valign="top"><b>На другой аккаунт</b><br><img src="docs/screens/call-other.png" width="100%" alt="На другой аккаунт"></td>
-<td width="25%" align="center" valign="top"><b>Входящий</b><br><img src="docs/screens/call-incoming.png" width="100%" alt="Входящий"></td>
-<td width="25%" align="center" valign="top"><b>Разговор</b><br><img src="docs/screens/call-talking.png" width="100%" alt="Разговор"></td>
-<td width="25%" align="center" valign="top"><b>Полоска звонка</b><br><img src="docs/screens/call-bar.png" width="100%" alt="Полоска звонка"></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screens/grid-phone-calls.png" width="100%" alt="Звонки: на другой аккаунт, входящий, разговор, полоска звонка"></p>
 
 Звонят только загруженные аккаунты: спящий в лучшем случае пришлёт уведомление. На iPhone звонок слышно, пока Hivogram открыт: из фона и с закрытым приложением iOS сайтам звонить не даёт.
 
@@ -147,25 +124,9 @@
 - **Меню статуса в шапке чата.** Выбрать статус, добавить новый, поставить метки и напоминание. Метки контакта видны и в шапке диалога.
 - **Автостатусы.** Написал клиент — «Открыт», ответили вы — «Ждёт ответа клиента». Можно включить, чтобы новое сообщение клиента сразу ставило «Срочно». Свои статусы автоматика не трогает.
 
-<table>
-<tr>
-<td width="50%" align="center" valign="top"><b>Список по статусам</b><br><img src="docs/screens/desktop-status-list.png" width="100%" alt="Список чатов, разбитый по статусам"></td>
-<td width="50%" align="center" valign="top"><b>Сортировка и вид</b><br><img src="docs/screens/desktop-status-sort.png" width="100%" alt="Меню сортировки"></td>
-</tr>
-<tr>
-<td width="50%" align="center" valign="top"><b>Статус и метки чата</b><br><img src="docs/screens/desktop-status-menu.png" width="100%" alt="Меню статуса в шапке чата"></td>
-<td width="50%" align="center" valign="top"><b>Редактор статусов</b><br><img src="docs/screens/desktop-status-editor.png" width="100%" alt="Редактор статусов"></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screens/grid-desktop-status.png" width="100%" alt="Статусы на ПК: список, сортировка, статус и метки чата, редактор"></p>
 
-<table>
-<tr>
-<td width="25%" align="center" valign="top"><b>Список</b><br><img src="docs/screens/iphone-status-list.png" width="100%" alt="Телефон: список по статусам"></td>
-<td width="25%" align="center" valign="top"><b>Сортировка</b><br><img src="docs/screens/iphone-status-sort.png" width="100%" alt="Телефон: сортировка"></td>
-<td width="25%" align="center" valign="top"><b>Статус чата</b><br><img src="docs/screens/iphone-status-menu.png" width="100%" alt="Телефон: статус чата"></td>
-<td width="25%" align="center" valign="top"><b>Редактор</b><br><img src="docs/screens/iphone-status-editor.png" width="100%" alt="Телефон: редактор статусов"></td>
-</tr>
-</table>
+<p align="center"><img src="docs/screens/grid-phone-status.png" width="100%" alt="Статусы на телефоне: список, сортировка, статус чата, редактор"></p>
 
 ## Рассылки по расписанию
 
