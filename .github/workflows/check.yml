@@ -1,5 +1,5 @@
 # Checks of the private repo chvdbhcx-del/alltginone (its own Actions cannot run): versions, rustfmt, clippy and
-# tests of the Tauri shell, the host page's types and build, Hivogram Lite's core tests and clippy.
+# tests of the Tauri shell, the host page's types, unit tests and build, Web A patch names, Hivogram Lite's core tests and clippy.
 # Hivogram and Hivogram Lite call it first (`needs: check`), so a broken source never gets published.
 # Read-only: the source is checked out with SOURCE_TOKEN, nothing of it can write here.
 name: Check
@@ -111,16 +111,20 @@ jobs:
           REF: ${{ inputs.ref }}
         run: |
           if [ -f scripts/check-versions.mjs ]; then node scripts/check-versions.mjs; else echo "::warning::No scripts/check-versions.mjs on $REF"; fi
+      - name: Web A patches numbered and named?
+        run: |
+          if [ -f scripts/check-patches.mjs ]; then node scripts/check-patches.mjs; else echo "No scripts/check-patches.mjs on this ref"; fi
 
       - name: cargo fmt
         if: inputs.shell
         run: cargo fmt --all --check
-      - name: Host (npm ci, tsc, vite build)
+      - name: Host (npm ci, tsc, tests, vite build)
         if: inputs.shell
         working-directory: src/host
         run: |
           npm ci --no-audit --no-fund
           npx tsc --noEmit
+          npm test --if-present
           npx vite build
       - name: Stub dist (tauri::generate_context! needs frontendDist to exist)
         if: inputs.shell
