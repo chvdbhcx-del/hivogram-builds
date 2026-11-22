@@ -20,7 +20,7 @@
 | **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.1-build.41.apk) | 0.2.1, сборка 41 | 22.11.2026 |
 | **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
 | **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.6-build.6-setup.exe) | 13.2.6, сборка 6 | 22.11.2026 |
-| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.27-setup.exe) | 0.3.0, сборка 27 | 22.11.2026 |
+| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.3.0-build.28-setup.exe) | 0.3.0, сборка 28 | 22.11.2026 |
 <!-- downloads:end -->
 
 - **WEBA** — основная версия для Windows. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».
