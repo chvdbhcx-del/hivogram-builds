@@ -43,6 +43,8 @@ def row(label, what, tag_prefix, asset_re, extra=None):
 
 row("WEBA", "Windows 10/11, основная версия", "", r"^Hivogram-WEBA-.*-setup\.exe$")
 row("APK", "Android 7+", "", r"^Hivogram-APK-.*\.apk$")
+if newest("", r"^Hivogram-Native-.*\.apk$")[0]:
+    row("Native", "Android 7+, нативный Hivogram", "", r"^Hivogram-Native-.*\.apk$")
 rows.append("| **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |")
 if newest("", r"^Hivogram-UNI-.*-setup\.exe$")[0]:
     row("UNI", "Windows 10/11, версия на Unigram", "", r"^Hivogram-UNI-.*-setup\.exe$")

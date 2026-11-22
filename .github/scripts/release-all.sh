@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # release-all.sh: keeps ONE release «Hivogram — все версии» (tag v<date>, marked Latest: apps and links
 # find it as /releases/latest) holding the newest
-# file of every version: WEBA (Windows), APK (Android), UNI (Unigram), Rust (Hivogram Lite), plus the сайт link.
-# Every app still publishes its own release (hivogram-v…, lite-v…, unigram-v…): installed apps update from those.
-# Of those only the newest per app is kept, older ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY (required: unsigned, nothing is published).
+# file of every version: WEBA (Windows), APK (Android), Native (native Android), UNI (Unigram), Rust (Hivogram Lite),
+# plus the сайт link. Every app still publishes its own release (hivogram-v…, lite-v…, unigram-v…, android-v…):
+# installed apps update from those. Of those only the newest per app is kept (native Android: the last 3), older
+# ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY (required: unsigned, nothing is published).
 set -euo pipefail
 # A new tag each time, v<year>.<monthday>.<hourmin>: GitHub lists it above the app releases (unigram-v…, lite-v…,
 # hivogram-v…), and no app updater takes it for its own.
@@ -80,6 +81,7 @@ pick("UNI",  "unigram-",  r"-setup\.exe$",              "Hivogram-UNI-{v}-build.
 pick("UNI",  "unigram-",  r"\.msixbundle$",             "Hivogram-UNI-{v}-build.{b}-x64.msixbundle")
 pick("UNI",  "unigram-",  r"\.cer$",                    "Hivogram-UNI.cer")
 pick("Rust", "lite-",     r"-setup\.exe$",              "Hivogram-Rust-{v}-build.{b}-setup.exe")
+pick("Native", "android-", r"\.apk$",                  "Hivogram-Native-{v}-build.{b}.apk")
 PY
 cat "$work/plan.tsv"
 
@@ -97,7 +99,7 @@ else
   while IFS=$'\t' read -r label src asset name; do
     gh release download "$src" --pattern "$asset" --dir "$work/dl" --clobber
     # Files uploaded from the PC (Unigram) carry no signature of their own, yet are re-signed below: check them first
-    if [ "$label" = UNI ]; then verify_from_release "$src" "$asset" "$work/dl/$asset"; fi
+    if [ "$label" = UNI ] || [ "$label" = Native ]; then verify_from_release "$src" "$asset" "$work/dl/$asset"; fi
     mv "$work/dl/$asset" "$work/out/$name"
   done < "$work/plan.tsv"
   (cd "$work/out" && sha256sum * > SHA256SUMS.txt && "$here/sign-sums.sh" SHA256SUMS.txt "$TAG")
@@ -109,6 +111,7 @@ else
     echo
     w=$(line WEBA); [ -n "$w" ] && echo "- **WEBA** ($(ver "$w")): \`$w\` — Windows 10/11, основная версия. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае»."
     a=$(line APK);  [ -n "$a" ] && echo "- **APK** ($(ver "$a")): \`$a\` — Android 7+."
+    n=$(line Native); [ -n "$n" ] && echo "- **Native** ($(ver "$n")): \`$n\` — Android 7+, нативный Hivogram (форк Telegram для Android). Ставится рядом с APK, это другое приложение."
     echo "- **сайт**: https://hivogram.pages.dev — iPhone и браузер. В Safari → «Поделиться» → «На экран „Домой“»."
     u=$(grep -P "^UNI\t" "$work/plan.tsv" | cut -f4 | grep -E 'setup\.exe$' || true)
     m=$(grep -P "^UNI\t" "$work/plan.tsv" | cut -f4 | grep -E 'msixbundle$' || true)
@@ -134,12 +137,14 @@ import json, re, sys
 rs = [r for r in json.load(open(sys.argv[1])) if not r["draft"] and not r.get("prerelease")]
 used = {l.split("\t")[1] for l in open(sys.argv[2]) if l.strip()}  # still the source of a file in the shared one
 rs.sort(key=lambda r: r.get("published_at") or "", reverse=True)
-seen = set()
+seen = {}
+KEEP = {"android": 3}  # native Android (android-v…): the last 3 builds, every other app only its newest
 for r in rs:
-    m = re.match(r"(hivogram|lite|unigram)-v[0-9.]+-build\.\d+$", r["tag_name"])
+    m = re.match(r"(hivogram|lite|unigram|android)-v[0-9.]+-build\.\d+$", r["tag_name"])
     if not m: continue
-    if m.group(1) in seen and r["tag_name"] not in used: print(r["tag_name"])
-    seen.add(m.group(1))
+    app = m.group(1)
+    if seen.get(app, 0) >= KEEP.get(app, 1) and r["tag_name"] not in used: print(r["tag_name"])
+    seen[app] = seen.get(app, 0) + 1
 PY
 while read -r old; do [ -n "$old" ] && { echo "Удаляю старую сборку $old"; gh release delete "$old" --yes --cleanup-tag; }; done < "$work/old.txt"
 # The app releases must never hold «Latest»: that is the shared one.
