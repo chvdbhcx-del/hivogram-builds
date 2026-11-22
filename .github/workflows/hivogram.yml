@@ -253,9 +253,15 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::No ANDROID_KEYSTORE_BASE64: APK signed with a throwaway key, it will not install over an older APK"
+            # a throwaway key is fine for a test build, never for a release: it would not install over an older APK
+            if [ "$PUBLISH" = true ]; then
+              echo "::error::No ANDROID_KEYSTORE_BASE64: a release APK must be signed with the permanent key (run with publish = false for a test build)"
+              exit 1
+            fi
+            echo "::warning::No ANDROID_KEYSTORE_BASE64: test APK signed with a throwaway key, it will not install over an older APK"
             exit 0
           fi
           cd src-tauri/gen/android
