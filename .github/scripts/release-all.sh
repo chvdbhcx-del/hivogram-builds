@@ -11,6 +11,54 @@ TAG="v$(date -u +%Y.%-m%d.%-H%M)"
 OLD_RE='^(hivogram-latest|hivogram-all-[0-9.]+|all-v[0-9.]+|v[0-9]{4}\.[0-9.]+)$'
 here=$(cd "$(dirname "$0")" && pwd)
 work=$(mktemp -d)
+
+# The certificate the Unigram msixbundle is signed with since Unigram build 9 (Hivogram-Unigram.cer of
+# unigram-v13.2.9-build.9, CN=D89C87B4-2758-402A-8F40-3571D00882AB, valid 2026-11-22..2029-11-22): SHA-256 of its DER.
+# A new certificate means a new value here. The old one (sha256 3e4bd1c3…, valid to 2027-04-16) is refused.
+UNI_CERT_SHA256=4d0f5afd939b55bf2d22f5f36b5d531dfa001889673c8886a8bdb9b81310d88c
+UNI_OLD_CERT_RE='^3e4bd1'
+die() { echo "::error::$*"; exit 1; }
+# cert_ok <what> <sha256 of a certificate's DER>: only the current Unigram certificate passes
+cert_ok() {
+  [ "$2" = "$UNI_CERT_SHA256" ] && return 0
+  [[ "$2" =~ $UNI_OLD_CERT_RE ]] && die "$1: signed with the OLD Unigram certificate ($2), refused"
+  die "$1: unknown certificate $2 (expected $UNI_CERT_SHA256)"
+}
+# verify_from_release <source tag> <asset> <downloaded file>: the file's SHA-256 must be the one in that release's
+# SHA256SUMS.txt, a .cer must be the current certificate and a .msixbundle must be signed with it.
+verify_from_release() {
+  local src=$1 asset=$2 file=$3 sums="$work/sums/$1/SHA256SUMS.txt" want got fp d c n=0
+  if [ ! -f "$sums" ]; then
+    gh release download "$src" --pattern SHA256SUMS.txt --dir "$work/sums/$src" --clobber \
+      || die "$src has no SHA256SUMS.txt: $asset cannot be checked, not re-signing it"
+  fi
+  # lines are "<sha256> <name>" or "<sha256> *<name>" (sha256sum -b)
+  want=$(awk -v n="$asset" '{f=$2; sub(/^\*/, "", f); if (f == n) { print tolower($1); exit }}' "$sums" | tr -d '\r')
+  [ -n "$want" ] || die "$asset is not listed in SHA256SUMS.txt of $src"
+  got=$(sha256sum "$file" | cut -d' ' -f1)
+  [ "$got" = "$want" ] || die "$asset from $src: SHA-256 $got, but its SHA256SUMS.txt says $want"
+  case "$asset" in
+    *.cer)
+      fp=$({ openssl x509 -inform DER -in "$file" -outform DER 2>/dev/null || openssl x509 -in "$file" -outform DER; } | sha256sum | cut -d' ' -f1) \
+        || die "$asset from $src is not a certificate"
+      cert_ok "$asset from $src" "$fp" ;;
+    *.msixbundle)
+      # AppxSignature.p7x = "PKCX" + PKCS#7 (DER) with the signer's certificate
+      d=$(mktemp -d)
+      unzip -p "$file" AppxSignature.p7x > "$d/sig.p7x" || die "$asset from $src has no AppxSignature.p7x (unsigned?)"
+      [ "$(head -c 4 "$d/sig.p7x")" = PKCX ] || die "$asset from $src: AppxSignature.p7x is not a signature"
+      tail -c +5 "$d/sig.p7x" | openssl pkcs7 -inform DER -print_certs > "$d/certs.pem" || die "$asset from $src: unreadable signature"
+      awk -v d="$d" '/-----BEGIN CERTIFICATE-----/ { n++ } n { print > (d "/c" n ".pem") }' "$d/certs.pem"
+      for c in "$d"/c*.pem; do
+        [ -f "$c" ] || continue
+        n=$((n + 1))
+        cert_ok "$asset from $src" "$(openssl x509 -in "$c" -outform DER | sha256sum | cut -d' ' -f1)"
+      done
+      [ "$n" -gt 0 ] || die "$asset from $src: no certificate in its signature"
+      rm -rf "$d" ;;
+  esac
+  echo "checked $asset from $src: SHA-256 matches its SHA256SUMS.txt"
+}
 gh api "repos/$GH_REPO/releases?per_page=100" > "$work/releases.json"
 
 # plan.tsv: <label> <source tag> <source asset> <new name>   (newest release that has that file)
@@ -48,6 +96,8 @@ else
   mkdir "$work/out"
   while IFS=$'\t' read -r label src asset name; do
     gh release download "$src" --pattern "$asset" --dir "$work/dl" --clobber
+    # Files uploaded from the PC (Unigram) carry no signature of their own, yet are re-signed below: check them first
+    if [ "$label" = UNI ]; then verify_from_release "$src" "$asset" "$work/dl/$asset"; fi
     mv "$work/dl/$asset" "$work/out/$name"
   done < "$work/plan.tsv"
   (cd "$work/out" && sha256sum * > SHA256SUMS.txt && "$here/sign-sums.sh" SHA256SUMS.txt "$TAG")
