@@ -59,9 +59,10 @@ jobs:
     name: ${{ inputs.title || 'Check (fmt, clippy, tests, host, Lite)' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # STATUS_TOKEN (write access to alltginone's statuses) is given only to the "pending" step, which runs before any
+    # of the source's code, and to the status job below; never to npm ci, build scripts, cargo build.rs or tests
     env:
       STATUS_SHA: ${{ inputs.status_sha }}
-      STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}
     defaults:
       run:
         working-directory: src
@@ -69,6 +70,8 @@ jobs:
       - name: Status on alltginone (pending)
         if: inputs.status_sha != ''
         working-directory: .
+        env:
+          STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}
         run: |
           [ -n "$STATUS_TOKEN" ] || { echo "No STATUS_TOKEN: result only in this run"; exit 0; }
           GH_TOKEN="$STATUS_TOKEN" gh api -X POST "repos/chvdbhcx-del/alltginone/statuses/$STATUS_SHA" \
@@ -149,12 +152,20 @@ jobs:
           [ -f lite/Cargo.toml ] || exit 0
           cd lite && cargo clippy --locked -p hivogram-core --all-targets
 
-      # PR check only: the result for alltginone, and a checked-<sha> marker so the same commit is not checked twice
+  # PR check only: the result for alltginone, and a checked-<sha> marker so the same commit is not checked twice.
+  # A job of its own on a fresh runner: the source's code (npm ci, build.rs, tests) ran in the job above and could
+  # have changed that runner (gh, PATH, $GITHUB_ENV), so STATUS_TOKEN never goes there.
+  status:
+    needs: check
+    if: always() && inputs.status_sha != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
       - name: Status on alltginone (result)
-        if: always() && inputs.status_sha != ''
-        working-directory: .
         env:
-          RESULT: ${{ job.status }}
+          STATUS_SHA: ${{ inputs.status_sha }}
+          RESULT: ${{ needs.check.result }}
+          STATUS_TOKEN: ${{ secrets.STATUS_TOKEN }}
         run: |
           mkdir -p "$RUNNER_TEMP/mark" && echo "$RESULT" > "$RUNNER_TEMP/mark/result.txt"
           [ -n "$STATUS_TOKEN" ] || exit 0
@@ -164,7 +175,6 @@ jobs:
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > /dev/null \
             || echo "::warning::Could not post the status"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always() && inputs.status_sha != ''
         with:
           name: checked-${{ inputs.status_sha }}
           path: ${{ runner.temp }}/mark/result.txt
