@@ -3,7 +3,7 @@
 # find it as /releases/latest) holding the newest
 # file of every version: WEBA (Windows), APK (Android), UNI (Unigram), Rust (Hivogram Lite), plus the сайт link.
 # Every app still publishes its own release (hivogram-v…, lite-v…, unigram-v…): installed apps update from those.
-# Of those only the newest per app is kept, older ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY optional.
+# Of those only the newest per app is kept, older ones are deleted. Needs GH_TOKEN, GH_REPO; UPDATE_SIGNING_KEY (required: unsigned, nothing is published).
 set -euo pipefail
 # A new tag each time, v<year>.<monthday>.<hourmin>: GitHub lists it above the app releases (unigram-v…, lite-v…,
 # hivogram-v…), and no app updater takes it for its own.
