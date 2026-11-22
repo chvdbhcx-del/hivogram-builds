@@ -147,6 +147,11 @@ for r in rs:
     seen[app] = seen.get(app, 0) + 1
 PY
 while read -r old; do [ -n "$old" ] && { echo "Удаляю старую сборку $old"; gh release delete "$old" --yes --cleanup-tag; }; done < "$work/old.txt"
+# The revoked Unigram build 6 draft (signed with the public Telegram_TemporaryKey) goes for good; the person agreed
+# 2026-11-22. Only that tag, and only while it is still a draft named «ОТОЗВАНО…».
+gh api "repos/$GH_REPO/releases?per_page=100" \
+  --jq '.[] | select(.draft and .tag_name == "unigram-v13.2.6-build.6" and (.name | startswith("ОТОЗВАНО"))) | .id' |
+  while read -r id; do echo "Удаляю отозванный черновик Unigram 6 ($id)"; gh api -X DELETE "repos/$GH_REPO/releases/$id"; done
 # The app releases must never hold «Latest»: that is the shared one.
 cur=$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name' | grep -E "$OLD_RE" | head -n1)
 [ -n "$cur" ] && gh release edit "$cur" --latest >/dev/null
