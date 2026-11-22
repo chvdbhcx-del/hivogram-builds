@@ -35,7 +35,7 @@ adb shell svc data disable
 adb shell cmd connectivity airplane-mode enable || adb shell settings put global airplane_mode_on 1
 
 n=0
-for screen in chats inbox group account calls settings prefs tabs accounts search broadcasts broadcast_edit templates chat_templates groups lock chat; do
+for screen in chats inbox inbox_sort crm group account calls settings prefs tabs accounts search broadcasts broadcast_edit templates chat_templates groups lock chat; do
   n=$((n+1))
   adb shell am force-stop $PKG
   adb shell am start -W -n $ACT --ez hivogram_demo true --es hivogram_screen $screen
