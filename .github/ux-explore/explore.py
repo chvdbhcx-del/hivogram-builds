@@ -139,7 +139,8 @@ def restore_data():
 
 def launch(screen):
     adb('shell am force-stop ' + PKG)
-    adb('shell am start -W -n %s --ez hivogram_demo true --es hivogram_screen %s' % (ACT, screen), 30)
+    extra = '' if screen == 'home' else ' --es hivogram_screen ' + screen
+    adb('shell am start -W -n %s --ez hivogram_demo true%s' % (ACT, extra), 30)
     time.sleep(7)
 
 def tap(b, long=False):

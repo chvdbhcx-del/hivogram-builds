@@ -12,7 +12,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ux-explore-android
+  group: ux-explore-android-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -23,10 +23,9 @@ jobs:
       fail-fast: false
       matrix:
         part:
-          - { name: a, screens: 'chats,inbox,inbox_sort,crm,group,account,inbox_all' }
-          - { name: b, screens: 'settings,prefs,tabs,accounts,lock,calls,search' }
-          - { name: c, screens: 'broadcasts,broadcast_edit,broadcast_history,templates,chat_templates,groups' }
-          - { name: d, screens: 'chat,ghost,history,quiet,ai,business' }
+          - { name: a2, screens: 'home,chats,inbox,inbox_sort,crm,inbox_all' }
+          - { name: b2, screens: 'settings,prefs,tabs,accounts,lock' }
+          - { name: e2, screens: 'group,account,calls,search' }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
