@@ -15,7 +15,7 @@ on:
         default: false
   # TEMPORARY (until this workflow is on main): test builds of the work branch on push. Remove before merging.
   push:
-    branches: [claude/project-thread-1ryc93]
+    branches: [claude/project-thread-1ryc93, claude/project-thread-80vejc]
     paths: [.github/workflows/android-native.yml, .android-build-trigger]
 
 permissions:
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.SOURCE_REPO }}
-          ref: ${{ inputs.ref || 'claude/project-thread-1ryc93' }}
+          ref: ${{ inputs.ref || github.ref_name }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
           persist-credentials: false
