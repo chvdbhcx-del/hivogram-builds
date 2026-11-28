@@ -1,0 +1,179 @@
+# Hivogram Desktop: Telegram Desktop (tdesktop/ of the private repo chvdbhcx-del/alltginone = pinned release + patches)
+# built for Windows x64 with Hivogram's API keys, auto-update and crash reports to Telegram off.
+#
+# The libraries (Qt, ffmpeg, openssl, …) take hours on the first run. Their folders are saved to the cache
+# even when the run stops half way, and prepare.py skips every library it already built, so a re-run continues.
+name: Hivogram Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch of alltginone to build
+        default: main
+  # TEMPORARY until this file is on main: a push of .tdesktop-build-trigger on the work branch starts a build
+  # of the branch named inside that file. Remove before merging.
+  push:
+    branches: [claude/project-thread-poa1js]
+    paths: [.tdesktop-build-trigger]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tdesktop
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 355
+    env:
+      PREPARE_PATH: Telegram/build/prepare/prepare.py
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - name: Free disk space
+        shell: pwsh
+        run: |
+          Remove-Item "C:\Android\android-sdk", "C:\Program Files\dotnet", "C:\Miniconda", "C:\msys64", "C:\Program Files\PostgreSQL", "C:\Program Files\MongoDB", "C:\Program Files\MySQL", "C:\ghcup", "C:\Program Files\LLVM", "C:\vcpkg", "C:\selenium", "C:\Program Files\R", "C:\rtools*" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item C:\hostedtoolcache\windows\Go*, C:\hostedtoolcache\windows\Ruby*, C:\hostedtoolcache\windows\PyPy*, C:\hostedtoolcache\windows\Java_* -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host ('{0:N1} GB free' -f ((Get-PSDrive C).Free / 1GB))
+          exit 0
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builds
+          persist-credentials: false
+
+      - name: Branch to build (from trigger file)
+        id: ref2
+        shell: bash
+        run: |
+          REF="${{ inputs.ref }}"
+          [ -n "$REF" ] || REF="$(tr -d '\r\n ' < builds/.tdesktop-build-trigger 2>/dev/null || true)"
+          [ -n "$REF" ] || REF=main
+          echo "Building alltginone@$REF"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: chvdbhcx-del/alltginone
+          ref: ${{ steps.ref2.outputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          persist-credentials: false
+
+      - name: Keys present?
+        shell: bash
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: '[ -n "$TELEGRAM_API_ID" ] && [ -n "$TELEGRAM_API_HASH" ] || { echo "::error::Secrets TELEGRAM_API_ID / TELEGRAM_API_HASH are not set"; exit 1; }'
+
+      - name: Prepare directories
+        run: |
+          mkdir %userprofile%\TBuild\Libraries
+          mklink /d %GITHUB_WORKSPACE%\TBuild %userprofile%\TBuild
+          echo TBUILD=%GITHUB_WORKSPACE%\TBuild>>%GITHUB_ENV%
+          echo LibrariesPath=%GITHUB_WORKSPACE%\TBuild\Libraries\win64>>%GITHUB_ENV%
+
+      - name: Telegram Desktop source + Hivogram patches
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+          git config --global user.email "hivogram@localhost"
+          git config --global user.name "Hivogram"
+          SRC_DIR="$TBUILD/tdesktop" src/tdesktop/fetch-upstream.sh
+          DOCPATH="$TBUILD/tdesktop/docs/building-win.md"
+          SDK="$(grep "SDK version" "$DOCPATH" | sed -r 's/.*\*\*(.*)\*\* SDK version.*/\1/')"
+          echo "SDK=$SDK" >> "$GITHUB_ENV"
+          echo "$(sha256sum "$TBUILD/tdesktop/$PREPARE_PATH" | awk '{ print $1 }')" > CACHE_KEY.txt
+          echo "$SDK" >> CACHE_KEY.txt
+          echo "CACHE_KEY=$(sha256sum CACHE_KEY.txt | awk '{ print $1 }')" >> "$GITHUB_ENV"
+          sed -i '/CMAKE_${lang}_FLAGS_DEBUG_INIT/s/${_Zi}//' "$PROGRAMFILES"/CMake/share/cmake*/Modules/Platform/Windows-MSVC.cmake || true
+
+      - uses: Eden-CI/msvc-dev-cmd@master
+        with:
+          arch: x64
+          sdk: ${{ env.SDK }}
+          toolset: '14.44'
+
+      - name: NuGet sources
+        run: |
+          nuget sources Disable -Name "Microsoft Visual Studio Offline Packages"
+          nuget sources Add -Source https://api.nuget.org/v3/index.json & exit 0
+
+      - name: Restore ThirdParty
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.TBUILD }}\ThirdParty
+          key: tdesktop-third-party-${{ env.CACHE_KEY }}-${{ github.run_id }}
+          restore-keys: tdesktop-third-party-${{ env.CACHE_KEY }}-
+
+      - name: Restore libraries
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.LibrariesPath }}
+          key: tdesktop-libs-x64-${{ env.CACHE_KEY }}-${{ github.run_id }}
+          restore-keys: tdesktop-libs-x64-${{ env.CACHE_KEY }}-
+
+      - name: Libraries (hours on the first run)
+        id: libs
+        timeout-minutes: 300
+        run: |
+          set CARGO_INCREMENTAL=0
+          %TBUILD%\tdesktop\Telegram\build\prepare\win.bat skip-release silent
+
+      - name: Trim libraries
+        if: always()
+        shell: bash
+        run: find "$LibrariesPath" '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -name '*.pc' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' -o -path '*/nv-codec-headers/*' -o -path '*/src/wallet_engine/*' ')' -type f ')' -o -empty ')' -delete || true
+
+      # Saved even when the libraries step failed or timed out: the next run picks up where this one stopped
+      - name: Save ThirdParty
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.TBUILD }}\ThirdParty
+          key: tdesktop-third-party-${{ env.CACHE_KEY }}-${{ github.run_id }}
+      - name: Save libraries
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.LibrariesPath }}
+          key: tdesktop-libs-x64-${{ env.CACHE_KEY }}-${{ github.run_id }}
+
+      - name: Build Hivogram Desktop
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          cd %TBUILD%\tdesktop\Telegram
+          call configure.bat x64 ^
+          -D TDESKTOP_API_ID=%TELEGRAM_API_ID% ^
+          -D TDESKTOP_API_HASH=%TELEGRAM_API_HASH% ^
+          -D CMAKE_CONFIGURATION_TYPES=Release ^
+          -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
+          if errorlevel 1 exit /b 1
+          cmake --build ..\out --config Release --parallel
+          if errorlevel 1 exit /b 1
+
+      - name: Collect
+        shell: bash
+        run: |
+          VER=$(grep -m1 'AppVersionStr' "$TBUILD/tdesktop/Telegram/SourceFiles/core/version.h" | cut -d'"' -f2)
+          mkdir -p out/HivogramDesktop
+          cp "$TBUILD/tdesktop/out/Release/HivogramDesktop.exe" out/HivogramDesktop/
+          cp src/LICENSE out/HivogramDesktop/LICENSE-hivogram.txt 2>/dev/null || true
+          cp "$TBUILD/tdesktop/LICENSE" out/HivogramDesktop/LICENSE.txt
+          echo "NAME=HivogramDesktop-$VER-build.${{ github.run_number }}-win64" >> "$GITHUB_ENV"
+          ls -la out/HivogramDesktop
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.NAME }}
+          path: out/HivogramDesktop/
+          retention-days: 14
