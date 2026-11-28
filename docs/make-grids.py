@@ -62,6 +62,12 @@ GRIDS = {
         ('lite/lite-chat-poll', 'Опрос, стикер, эмодзи'),
         ('lite/lite-group-call', 'Голосовой чат'),
     ]),
+    'grid-phone-native': ('phone', 4, [
+        ('native/chats', 'Чаты всех аккаунтов'),
+        ('native/statuses', 'Статусы и метки'),
+        ('native/calls', 'Звонки'),
+        ('native/templates', 'Шаблоны через «/»'),
+    ]),
     'grid-phone-status': ('phone', 4, [
         ('iphone-status-list', 'Список'),
         ('iphone-status-sort', 'Сортировка'),
