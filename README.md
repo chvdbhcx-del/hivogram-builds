@@ -16,12 +16,12 @@
 <!-- downloads:start -->
 | | Что | Файл | Версия | Дата |
 |---|---|---|---|---|
-| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.2-build.63-setup.exe) | 0.2.2, сборка 63 | 27.11.2026 |
-| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.2-build.63.apk) | 0.2.2, сборка 63 | 27.11.2026 |
-| **Native** | Android 7+, нативный Hivogram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Native-1.0.0-build.42.apk) | 1.0.0, сборка 42 | 27.11.2026 |
+| **WEBA** | Windows 10/11, основная версия | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-WEBA-0.2.2-build.64-setup.exe) | 0.2.2, сборка 64 | 28.11.2026 |
+| **APK** | Android 7+ | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-APK-0.2.2-build.64.apk) | 0.2.2, сборка 64 | 28.11.2026 |
+| **Native** | Android 7+, нативный Hivogram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Native-1.0.0-build.42.apk) | 1.0.0, сборка 42 | 28.11.2026 |
 | **сайт** | iPhone и браузер | [Открыть](https://hivogram.pages.dev) | всегда свежий | |
-| **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.9-build.9-setup.exe) | 13.2.9, сборка 9 | 27.11.2026 |
-| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.4.3-build.34-setup.exe) | 0.4.3, сборка 34 | 27.11.2026 |
+| **UNI** | Windows 10/11, версия на Unigram | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-UNI-13.2.9-build.9-setup.exe) | 13.2.9, сборка 9 | 28.11.2026 |
+| **Rust** | Windows, лёгкая версия для слабых ПК | [Скачать](https://github.com/chvdbhcx-del/hivogram-builds/releases/latest/download/Hivogram-Rust-0.4.3-build.34-setup.exe) | 0.4.3, сборка 34 | 28.11.2026 |
 <!-- downloads:end -->
 
 - **WEBA** — основная версия для Windows. Если SmartScreen ругается: «Подробнее» → «Выполнить в любом случае».
